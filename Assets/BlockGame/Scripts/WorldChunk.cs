@@ -120,6 +120,15 @@ public class WorldChunk
                 terrains[i, ii].Unload();
             }
         }
+        UnloadGraphics();
+    }
+
+    public void UnloadGraphics()
+    {
+        if (vertices.Count == 0)
+        {
+            return;
+        }
         vertices.Clear();
         normals.Clear();
         uvs.Clear();
@@ -128,6 +137,14 @@ public class WorldChunk
             indices[i].Clear();
         }
         colors.Clear();
+        vertices.TrimExcess();
+        normals.TrimExcess();
+        uvs.TrimExcess();
+        for (int i = 0; i < indices.Count; i++)
+        {
+            indices[i].TrimExcess();
+        }
+        colors.TrimExcess();
     }
 
     public int HeightsLoaded()

@@ -29,6 +29,7 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Debug.Log(rb.velocity.magnitude);
         if (Input.GetMouseButtonDown(0))
         {
             if (paused)

@@ -129,7 +129,7 @@ public class WorldNoise
         int a = 0;
         int am = 1;
         int seeder = 0;
-        for (int iiii = 1; iiii <= 10; iiii++)
+        for (int iiii = 1; iiii <= 12; iiii++)
         {
             double height = 0;
             double max = 0;
@@ -147,7 +147,6 @@ public class WorldNoise
             am *= 2;
         }
         h /= a;
-        h = h > 0 ? h * h : -h * h;
         return h;
     }
 

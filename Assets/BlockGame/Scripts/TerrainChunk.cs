@@ -59,7 +59,7 @@ public class TerrainChunk
         {
             for (int ii = 0; ii < size; ii++)
             {
-                float height = (float)WorldNoise.GetHeight(index1 * size + i, index2 * size + ii,0)*256;
+                float height = (float)WorldNoise.GetHeight(index1 * size + i, index2 * size + ii,0)*512;
                 minH = height < minH ? height : minH;
                 maxH = height > maxH ? height : maxH;
                 heights[i * size + ii] = height;

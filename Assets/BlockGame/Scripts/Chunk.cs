@@ -22,27 +22,15 @@ public class Chunk : MonoBehaviour
         mf.mesh.SetNormals(chunk.normals);
         if (mf.mesh.vertices.Length > 0)
         {
-            mf.mesh.UploadMeshData(false);
-            mf.mesh.RecalculateBounds();
             mc.sharedMesh = mf.mesh;
         }
         transform.position = new Vector3(chunk.index1 * size, 0, chunk.index2 * size);
-        chunk.vertices.Clear();
-        chunk.uvs.Clear();
-        chunk.colors.Clear();
-        chunk.normals.Clear();
-        for (int i = 0; i < chunk.indices.Count; i++)
-        {
-            chunk.indices[i].Clear();
-        }
         chunk.graphics = this;
     }
 
     public void Unload()
     {
         mf.mesh.Clear();
-        mf.mesh.UploadMeshData(false);
-        mf.mesh.RecalculateBounds();
         mc.sharedMesh = null;
         gameObject.SetActive(false);
     }
