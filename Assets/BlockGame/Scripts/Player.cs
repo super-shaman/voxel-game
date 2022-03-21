@@ -13,6 +13,7 @@ public class Player : MonoBehaviour
 
     void Start()
     {
+        cam.opaqueSortMode = UnityEngine.Rendering.OpaqueSortMode.FrontToBack;
     }
 
     bool forward;

@@ -243,10 +243,15 @@ public class TerrainChunk
                 SetBlock(ier, iier, h + 11, 4);
             }
         }
-        for (int o = 0; o < 8+3; o++)
+        for (int o = 1; o < 8+3; o++)
         {
             SetBlock(i, ii, h + o, 3);
         }
+    }
+    void SpawnGrass(int i, int ii, int h)
+    {
+
+        SetBlock(i, ii, h + 1, 5);
     }
 
     public void LoadStructures()
@@ -256,9 +261,12 @@ public class TerrainChunk
             for (int ii = 0; ii < size; ii++)
             {
                 float height = heights[i * size + ii];
-                if (height > 0 && (WorldNoise.ValueCoherentNoise3D(index1*size+i,index2*size+ii,0,0)+1)*64 < 1)
+                if (height > 0 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
                 {
                     SpawnTree(i, ii, Mathf.FloorToInt(height));
+                } else if (height > 0)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
+                {
+                    SpawnGrass(i,ii, Mathf.FloorToInt(height));
                 }
             }
         }

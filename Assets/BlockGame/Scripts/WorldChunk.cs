@@ -25,12 +25,8 @@ public class WorldChunk
     public bool unloading;
     public WorldChunk[] chunks = new WorldChunk[3 * 3];
 
-    public List<Vector3> vertices = new List<Vector3>();
-    public List<Vector3> normals = new List<Vector3>();
-    public List<Vector2> uvs = new List<Vector2>();
-    public List<List<int>> indices = new List<List<int>>();
-    public List<Color> colors = new List<Color>();
     public Chunk graphics;
+    public MeshData meshData;
 
     public WorldChunk(int size, int index1, int index2)
     {
@@ -38,11 +34,6 @@ public class WorldChunk
         this.index1 = index1;
         this.index2 = index2;
         terrains = new TerrainChunk[size, size];
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
     }
 
     public void Load(int index1, int index2)
@@ -120,32 +111,9 @@ public class WorldChunk
                 terrains[i, ii].Unload();
             }
         }
-        UnloadGraphics();
     }
+    
 
-    public void UnloadGraphics()
-    {
-        if (vertices.Count == 0)
-        {
-            return;
-        }
-        vertices.Clear();
-        normals.Clear();
-        uvs.Clear();
-        for (int i = 0; i < indices.Count; i++)
-        {
-            indices[i].Clear();
-        }
-        colors.Clear();
-        vertices.TrimExcess();
-        normals.TrimExcess();
-        uvs.TrimExcess();
-        for (int i = 0; i < indices.Count; i++)
-        {
-            indices[i].TrimExcess();
-        }
-        colors.TrimExcess();
-    }
 
     public int HeightsLoaded()
     {

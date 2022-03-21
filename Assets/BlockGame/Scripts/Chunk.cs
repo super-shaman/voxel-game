@@ -8,30 +8,65 @@ public class Chunk : MonoBehaviour
     public MeshRenderer mr;
     public MeshCollider mc;
     public VoxelChunk chunk;
-    
+    Mesh colliderMesh;
+
     public void load(int size, WorldChunk chunk)
     {
-        mf.mesh.SetVertices(chunk.vertices);
-        mf.mesh.SetUVs(0,chunk.uvs);
-        mf.mesh.SetColors(chunk.colors);
-        mf.mesh.subMeshCount = chunk.indices.Count;
-        for (int i = 0; i < chunk.indices.Count; i++)
+        MeshData md = chunk.meshData;
+        mf.mesh.SetVertices(md.vertices);
+        mf.mesh.SetUVs(0, md.uvs);
+        mf.mesh.SetColors(md.colors);
+        mf.mesh.SetNormals(md.normals);
+        mf.mesh.subMeshCount = md.indices.Count;
+        for (int i = 0; i < md.indices.Count; i++)
         {
-            mf.mesh.SetIndices(chunk.indices[i], MeshTopology.Triangles, i);
+            mf.mesh.SetIndices(md.indices[i], MeshTopology.Triangles, i);
         }
-        mf.mesh.SetNormals(chunk.normals);
+        /*mf.mesh.GetIndexBuffer().GetData(indices);
+        flippedIndices = new int[indices.Length];
+        System.Array.Copy(indices, flippedIndices, 0);
+        System.Array.Reverse(indices);*/
         if (mf.mesh.vertices.Length > 0)
         {
-            mc.sharedMesh = mf.mesh;
+            if (colliderMesh == null)
+            {
+                colliderMesh = new Mesh();
+                colliderMesh.SetVertices(md.vertices);
+                colliderMesh.SetNormals(md.normals);
+                colliderMesh.subMeshCount = md.indices.Count-1;
+                for (int i = 0; i < md.indices.Count-1; i++)
+                {
+                    colliderMesh.SetIndices(md.indices[i], MeshTopology.Triangles, i);
+                }
+                mc.sharedMesh = colliderMesh;
+            }
+            else
+            {
+                colliderMesh.SetVertices(md.vertices);
+                colliderMesh.SetNormals(md.normals);
+                colliderMesh.subMeshCount = md.indices.Count-1;
+                for (int i = 0; i < md.indices.Count - 1; i++)
+                {
+                    colliderMesh.SetIndices(md.indices[i], MeshTopology.Triangles, i);
+                }
+                mc.sharedMesh = colliderMesh;
+            }
         }
         transform.position = new Vector3(chunk.index1 * size, 0, chunk.index2 * size);
+        pos = transform.position;
+        //order = (int)-(PlayerPos - pos).magnitude;
+        //mr.sortingOrder = order;
         chunk.graphics = this;
     }
-
+    
     public void Unload()
     {
         mf.mesh.Clear();
-        mc.sharedMesh = null;
+        if (mc.sharedMesh != null)
+        {
+            mc.sharedMesh = null;
+            colliderMesh.Clear();
+        }
         gameObject.SetActive(false);
     }
 
@@ -40,9 +75,18 @@ public class Chunk : MonoBehaviour
         gameObject.SetActive(true);
     }
 
-    void Update()
-    {
+    public static Vector3 PlayerPos = new Vector3();
+    Vector3 pos;
+    int order = 0;
 
+    public void Sort()
+    {
+        order = (int)-(PlayerPos - pos).magnitude;
     }
-    
+
+    public void SetOrder()
+    {
+        //mr.sortingOrder = order;
+    }
+
 }
