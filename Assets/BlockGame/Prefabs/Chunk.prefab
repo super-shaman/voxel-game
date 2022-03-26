@@ -13,12 +13,13 @@ GameObject:
   - component: {fileID: 3799502320375007404}
   - component: {fileID: 3799502320375007405}
   - component: {fileID: 3799502320375007401}
+  - component: {fileID: -364497345738039743}
   m_Layer: 0
   m_Name: Chunk
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
+  m_StaticEditorFlags: 2147483647
   m_IsActive: 1
 --- !u!4 &3799502320375007402
 Transform:
@@ -54,7 +55,7 @@ MeshRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
+  m_StaticShadowCaster: 1
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
@@ -69,6 +70,7 @@ MeshRenderer:
   - {fileID: 2100000, guid: f9e3419e56f9fe04ba5a0bdc4d391d8f, type: 2}
   - {fileID: 2100000, guid: 6c1b36137ba8b7e4d81f7544205d1098, type: 2}
   - {fileID: 2100000, guid: be0c03b381130334ea39667ace092311, type: 2}
+  - {fileID: 2100000, guid: 1b2e8e083a0a6614c8aa6ade5ed33877, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -119,3 +121,23 @@ MonoBehaviour:
   mf: {fileID: 3799502320375007403}
   mr: {fileID: 3799502320375007404}
   mc: {fileID: 3799502320375007405}
+  lodGroup: {fileID: -364497345738039743}
+--- !u!205 &-364497345738039743
+LODGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3799502320375007406}
+  serializedVersion: 2
+  m_LocalReferencePoint: {x: 0, y: 0, z: 0}
+  m_Size: 56
+  m_FadeMode: 0
+  m_AnimateCrossFading: 0
+  m_LastLODIsBillboard: 0
+  m_LODs:
+  - screenRelativeHeight: 0.027
+    fadeTransitionWidth: 1
+    renderers:
+    - renderer: {fileID: 3799502320375007404}
+  m_Enabled: 1

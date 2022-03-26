@@ -156,7 +156,7 @@ MonoBehaviour:
   player: {fileID: 1365831856}
   fps: {fileID: 1638665523}
   memory: {fileID: 1060521157}
-  worldChunkSize: 4
+  worldChunkSize: 1
 --- !u!4 &425037955
 Transform:
   m_ObjectHideFlags: 0
@@ -527,8 +527,8 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 10000
+  near clip plane: 0.2
+  far clip plane: 1500
   field of view: 90
   orthographic: 0
   orthographic size: 5

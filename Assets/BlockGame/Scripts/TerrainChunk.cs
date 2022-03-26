@@ -65,6 +65,7 @@ public class TerrainChunk
                 heights[i * size + ii] = height;
             }
         }
+        maxH = maxH < 0 ? 0 : maxH;
     }
     
     public void LoadVoxelChunks()
@@ -119,10 +120,15 @@ public class TerrainChunk
 
     public void LoadGraphics()
     {
+        for (int i = loadedChunks.Count - 1; i >= 0; i--)
+        {
+            VoxelChunk chunk = loadedChunks[i];
+            chunk.LoadGraphicsDownFast();
+        }
         for (int i = 0; i < loadedChunks.Count; i++)
         {
             VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphics();
+            chunk.LoadGraphicsUpFast();
         }
     }
 

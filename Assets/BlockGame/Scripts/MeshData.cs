@@ -16,6 +16,7 @@ public class MeshData
         indices.Add(new List<int>());
         indices.Add(new List<int>());
         indices.Add(new List<int>());
+        indices.Add(new List<int>());
         vertDictionary.Add(new Dictionary<Vector3, int>());
         vertDictionary.Add(new Dictionary<Vector3, int>());
         vertDictionary.Add(new Dictionary<Vector3, int>());
@@ -29,8 +30,11 @@ public class MeshData
         vertDictionary.Add(new Dictionary<Vector3, int>());
     }
 
+    public int lod = 0;
+
     public void Unload()
     {
+        lod = 0;
         if (vertices.Count == 0)
         {
             return;

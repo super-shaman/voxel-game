@@ -25,8 +25,10 @@ public class WorldChunk
     public bool unloading;
     public WorldChunk[] chunks = new WorldChunk[3 * 3];
 
-    public Chunk graphics;
-    public MeshData meshData;
+    public List<Chunk> graphics = new List<Chunk>();
+    public List<MeshData> meshData = new List<MeshData>();
+    public int meshesLoaded = 0;
+    public bool GetNextMeshData = false;
 
     public WorldChunk(int size, int index1, int index2)
     {
@@ -111,6 +113,7 @@ public class WorldChunk
                 terrains[i, ii].Unload();
             }
         }
+        meshesLoaded = 0;
     }
     
 
