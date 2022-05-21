@@ -28,7 +28,6 @@ public class WorldChunk
     public List<Chunk> graphics = new List<Chunk>();
     public List<MeshData> meshData = new List<MeshData>();
     public int meshesLoaded = 0;
-    public bool GetNextMeshData = false;
 
     public WorldChunk(int size, int index1, int index2)
     {
@@ -223,7 +222,19 @@ public class WorldChunk
             chunks[i].structuresLoaded++;
         }
     }
+    public bool AreStructuresLoading()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            if (chunks[i].loading)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    public bool loading;
     public void LoadStructures()
     {
         for (int i = 0; i < size; i++)
@@ -234,6 +245,7 @@ public class WorldChunk
             }
         }
         areStructuresLoaded = true;
+        done = true;
     }
 
     public void LoadGraphics()

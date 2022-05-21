@@ -10,24 +10,24 @@ public class MeshData
 
     public MeshData()
     {
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        indices.Add(new List<int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
-        vertDictionary.Add(new Dictionary<Vector3, int>());
+        indices.Add(new List<ushort>());
+        indices.Add(new List<ushort>());
+        indices.Add(new List<ushort>());
+        indices.Add(new List<ushort>());
+        indices.Add(new List<ushort>());
+        indices.Add(new List<ushort>());
+        indices.Add(new List<ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
+        vertDictionary.Add(new Dictionary<Vector3, ushort>());
     }
 
     public int lod = 0;
@@ -56,8 +56,8 @@ public class MeshData
     public List<Vector3> vertices = new List<Vector3>();
     public List<Vector3> normals = new List<Vector3>();
     public List<Vector2> uvs = new List<Vector2>();
-    public List<List<int>> indices = new List<List<int>>();
+    public List<List<ushort>> indices = new List<List<ushort>>();
     public List<Color> colors = new List<Color>();
-    public List<Dictionary<Vector3, int>> vertDictionary = new List<Dictionary<Vector3, int>>();
+    public List<Dictionary<Vector3, ushort>> vertDictionary = new List<Dictionary<Vector3, ushort>>();
 
 }

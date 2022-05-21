@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
 using TMPro;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 public class World : MonoBehaviour
 {
@@ -85,13 +87,12 @@ public class World : MonoBehaviour
 
     }
 
-    List<VoxelChunk> voxelPool = new List<VoxelChunk>();
+    ConcurrentBag<VoxelChunk> voxelPool = new ConcurrentBag<VoxelChunk>();
 
     public void UnloadVoxelChunk(VoxelChunk chunk)
     {
         voxelPool.Add(chunk);
     }
-
     public VoxelChunk GetVoxelChunk()
     {
         if (voxelPool.Count == 0)
@@ -99,8 +100,11 @@ public class World : MonoBehaviour
             return new VoxelChunk(size);
         }else
         {
-            VoxelChunk chunk = voxelPool[voxelPool.Count - 1];
-            voxelPool.RemoveAt(voxelPool.Count - 1);
+            VoxelChunk chunk;
+            while(!voxelPool.TryTake(out chunk))
+            {
+
+            }
             return chunk;
         }
     }
@@ -396,7 +400,7 @@ public class World : MonoBehaviour
     Vector2 currentPlayerPos = new Vector2();
     bool StopLoadingGraphics = false;
     bool RemoveGraphics = false;
-    List<MeshData> meshDataPool = new List<MeshData>();
+    ConcurrentBag<MeshData> meshDataPool = new ConcurrentBag<MeshData>();
 
     void UnloadMeshData(WorldChunk wc)
     {
@@ -411,20 +415,28 @@ public class World : MonoBehaviour
 
     int meshDataLoaded = 0;
 
-    MeshData GetMeshData()
+    public MeshData GetMeshData()
     {
-        if (meshDataPool.Count == 0)
+        if (voxelPool.Count == 0)
         {
             meshDataLoaded++;
             return new MeshData();
         }
-        MeshData md = meshDataPool[0];
-        meshDataPool.RemoveAt(0);
-        return md;
+        else
+        {
+            MeshData md;
+            while (!meshDataPool.TryTake(out md))
+            {
+
+            }
+            return md;
+        }
     }
+    
 
     void LoadTerrain()
     {
+        Vector2 pos = currentPlayerPos;
         if (!SortGraphics && chunkMover.magnitude > 0)
         {
             RemoveGraphics = false;
@@ -471,53 +483,8 @@ public class World : MonoBehaviour
             }
             reloadChunks = false;
         }
-        Vector2 pos = currentPlayerPos;
         if (!LoadingGraphics)
         {
-            if ((MoveGraphics))
-            {
-                MoveGraphics = false;
-                RemoveGraphics = false;
-                StopLoadingGraphics = true;
-                while (StopLoadingGraphics)
-                {
-                    Thread.Sleep((int)(1.0f / 60.0f * 1000));
-                    if (RemoveGraphics)
-                    {
-                        for (int i = 0; i < unloadChunks.Count; i++)
-                        {
-                            WorldChunk wc = unloadChunks[i];
-                            int index = loadGraphics.IndexOf(wc);
-                            if (index >= 0)
-                            {
-                                if (dontLoadCurrent[i].meshData.Count > 0)
-                                {
-                                    UnloadMeshData(dontLoadCurrent[i]);
-                                }
-                                dontLoad.Add(wc);
-                                loadGraphics.RemoveAt(index);
-                            }
-                        }
-                        unloadChunks.Clear();
-                        for (int i = 0; i < loadGraphics.Count; i++)
-                        {
-                            WorldChunk wc = loadGraphics[i];
-                            for (int ii = i; ii < loadGraphics.Count; ii++)
-                            {
-                                WorldChunk wc2 = loadGraphics[ii];
-                                if ((new Vector2(wc.index1 * size * worldChunkSize, wc.index2 * size * worldChunkSize) - pos).magnitude > (new Vector2(wc2.index1 * size * worldChunkSize, wc2.index2 * size * worldChunkSize) - pos).magnitude)
-                                {
-                                    loadGraphics[i] = wc2;
-                                    loadGraphics[ii] = wc;
-                                    wc = wc2;
-                                }
-                            }
-                        }
-                        RemoveGraphics = false;
-                        StopLoadingGraphics = false;
-                    }
-                }
-            }
             for (int i = 0; i < worldsToLoad.Count; i++)
             {
                 WorldChunk wc = worldsToLoad[i];
@@ -529,17 +496,20 @@ public class World : MonoBehaviour
                     heightsToLoad.Add(wc);
                 }
             }
-            for (int i = 0; i < worldsToLoad.Count; i++)
+            if (chunkMover.magnitude > 0)
             {
-                WorldChunk wc = worldsToLoad[i];
-                for (int ii = i; ii < worldsToLoad.Count; ii++)
+                for (int i = 0; i < worldsToLoad.Count; i++)
                 {
-                    WorldChunk wc2 = worldsToLoad[ii];
-                    if ((new Vector2(wc.index1 * size * worldChunkSize, wc.index2 * size * worldChunkSize) - pos).magnitude > (new Vector2(wc2.index1 * size * worldChunkSize, wc2.index2 * size * worldChunkSize) - pos).magnitude)
+                    WorldChunk wc = worldsToLoad[i];
+                    for (int ii = i; ii < worldsToLoad.Count; ii++)
                     {
-                        worldsToLoad[i] = wc2;
-                        worldsToLoad[ii] = wc;
-                        wc = wc2;
+                        WorldChunk wc2 = worldsToLoad[ii];
+                        if ((new Vector2(wc.index1 * size * worldChunkSize, wc.index2 * size * worldChunkSize) - pos).magnitude > (new Vector2(wc2.index1 * size * worldChunkSize, wc2.index2 * size * worldChunkSize) - pos).magnitude)
+                        {
+                            worldsToLoad[i] = wc2;
+                            worldsToLoad[ii] = wc;
+                            wc = wc2;
+                        }
                     }
                 }
             }
@@ -576,11 +546,6 @@ public class World : MonoBehaviour
                     {
                         for (int ii = 0; ii < loadingChunks.Count; ii++)
                         {
-                            if (loadingChunks[ii].GetNextMeshData)
-                            {
-                                loadingChunks[ii].meshData.Add(GetMeshData());
-                                loadingChunks[ii].GetNextMeshData = false;
-                            }
                             if (loadingChunks[ii].done)
                             {
                                 loadingChunks[ii].thread.Join();
@@ -599,24 +564,11 @@ public class World : MonoBehaviour
                 worldsToLoad.RemoveAt(i);
                 i--;
             }
-            while (loadingChunks.Count > 0)
+            for (int ii = 0; ii < loadingChunks.Count; ii++)
             {
-                for (int ii = 0; ii < loadingChunks.Count; ii++)
-                {
-                    if (loadingChunks[ii].GetNextMeshData)
-                    {
-                        loadingChunks[ii].meshData.Add(GetMeshData());
-                        loadingChunks[ii].GetNextMeshData = false;
-
-                    }
-                    if (loadingChunks[ii].done)
-                    {
-                        loadingChunks[ii].thread.Join();
-                        loadingChunks.RemoveAt(ii);
-                        ii--;
-                    }
-                }
+                loadingChunks[ii].thread.Join();
             }
+            loadingChunks.Clear();
             LoadingGraphics = true;
             if (graphicsToLoad.Count > 0 && chunkMover.magnitude == 0)
             {
@@ -636,6 +588,39 @@ public class World : MonoBehaviour
                 }
             }
             MoveChunks();
+            if ((MoveGraphics))
+            {
+                MoveGraphics = false;
+                for (int i = 0; i < unloadChunks.Count; i++)
+                {
+                    WorldChunk wc = unloadChunks[i];
+                    int index = loadGraphics.IndexOf(wc);
+                    if (index >= 0)
+                    {
+                        if (dontLoadCurrent[i].meshData.Count > 0)
+                        {
+                            UnloadMeshData(dontLoadCurrent[i]);
+                        }
+                        dontLoad.Add(wc);
+                        loadGraphics.RemoveAt(index);
+                    }
+                }
+                unloadChunks.Clear();
+                for (int i = 0; i < loadGraphics.Count; i++)
+                {
+                    WorldChunk wc = loadGraphics[i];
+                    for (int ii = i; ii < loadGraphics.Count; ii++)
+                    {
+                        WorldChunk wc2 = loadGraphics[ii];
+                        if ((new Vector2(wc.index1 * size * worldChunkSize, wc.index2 * size * worldChunkSize) - pos).magnitude > (new Vector2(wc2.index1 * size * worldChunkSize, wc2.index2 * size * worldChunkSize) - pos).magnitude)
+                        {
+                            loadGraphics[i] = wc2;
+                            loadGraphics[ii] = wc;
+                            wc = wc2;
+                        }
+                    }
+                }
+            }
             UnloadingGraphics = true;
             StopLoadingGraphics = false;
             RemoveGraphics = false;
@@ -785,24 +770,80 @@ public class World : MonoBehaviour
                     i--;
                 }
             }
-            for (int i = 0; i < structuresToLoad.Count; i++)
+            bool finished = false;
+            while (!finished)
             {
-                WorldChunk wc = structuresToLoad[i];
-                if (wc.unloading)
+                int structuresLoaded = 0;
+                for (int i = 0; i < structuresToLoad.Count; i++)
                 {
-                    wc.unloading = false;
-                    structuresToLoad.RemoveAt(i);
-                    heightsToLoad.Add(wc);
-                    continue;
+                    WorldChunk wc = structuresToLoad[i];
+                    if (wc.unloading)
+                    {
+                        wc.unloading = false;
+                        structuresToLoad.RemoveAt(i);
+                        heightsToLoad.Add(wc);
+                        continue;
+                    }
+                    if (!(wc.index1 - chunkIndex.x >= -worldChunkLoadSize / 2 + 2 && wc.index1 - chunkIndex.x < worldChunkLoadSize / 2 - 3 && wc.index2 - chunkIndex.y >= -worldChunkLoadSize / 2 + 2 && wc.index2 - chunkIndex.y < worldChunkLoadSize / 2 - 3))
+                    {
+                        continue;
+                    }
+                    if (!wc.AreStructuresLoaded() && !wc.AreStructuresLoading())
+                    {
+                        wc.AddStructures();
+                        structuresLoaded++;
+                        if (loadingChunks.Count < maxThreads - threadOffset)
+                        {
+                            wc.done = false;
+                            wc.loading = true;
+                            wc.thread = new Thread(wc.LoadStructures);
+                            wc.thread.Start();
+                            loadingChunks.Add(wc);
+                        }
+                        else
+                        {
+                            while (loadingChunks.Count >= maxThreads - threadOffset)
+                            {
+                                for (int ii = 0; ii < loadingChunks.Count; ii++)
+                                {
+                                    if (loadingChunks[ii].done)
+                                    {
+                                        loadingChunks[ii].thread.Join();
+                                        loadingChunks[ii].loading = false;
+                                        loadingChunks.RemoveAt(ii);
+                                        ii--;
+                                    }
+                                }
+                            }
+                            wc.done = false;
+                            wc.loading = true;
+                            wc.thread = new Thread(wc.LoadStructures);
+                            wc.thread.Start();
+                            loadingChunks.Add(wc);
+                        }
+                        if (wc.StructuresLoaded() == 9)
+                        {
+                            worldsToLoad.Add(wc);
+                            structuresToLoad.RemoveAt(i);
+                            i--;
+                        }
+                    }
+                    else if (wc.StructuresLoaded() == 9)
+                    {
+                        worldsToLoad.Add(wc);
+                        structuresToLoad.RemoveAt(i);
+                        i--;
+                    }
                 }
-                if (!(wc.index1 - chunkIndex.x >= -worldChunkLoadSize / 2 + 2 && wc.index1 - chunkIndex.x < worldChunkLoadSize / 2 - 3 && wc.index2 - chunkIndex.y >= -worldChunkLoadSize / 2 + 2 && wc.index2 - chunkIndex.y < worldChunkLoadSize / 2 - 3))
+                for (int ii = 0; ii < loadingChunks.Count; ii++)
                 {
-                    continue;
+                    loadingChunks[ii].thread.Join();
+                    loadingChunks[ii].loading = false;
                 }
-                if (!wc.AreStructuresLoaded())
+                loadingChunks.Clear();
+                for (int i = 0; i < structuresToLoad.Count; i++)
                 {
-                    wc.AddStructures();
-                    wc.LoadStructures();
+                    WorldChunk wc = structuresToLoad[i];
                     if (wc.StructuresLoaded() == 9)
                     {
                         worldsToLoad.Add(wc);
@@ -810,11 +851,9 @@ public class World : MonoBehaviour
                         i--;
                     }
                 }
-                else if (wc.StructuresLoaded() == 9)
+                if (structuresLoaded == 0)
                 {
-                    worldsToLoad.Add(wc);
-                    structuresToLoad.RemoveAt(i);
-                    i--;
+                    finished = true;
                 }
             }
         }
@@ -1030,6 +1069,7 @@ public class World : MonoBehaviour
         if (!loading)
         {
             thread = new Thread(LoadThread);
+            thread.IsBackground = true;
             thread.Start();
             loading = true;
         }else if (done)

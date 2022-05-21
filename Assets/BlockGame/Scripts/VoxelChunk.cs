@@ -13,6 +13,7 @@ public class VoxelChunk
     public int index2;
     public int index3;
     int size;
+
     //public List<Vector3> vertices = new List<Vector3>();
     //public List<Vector3> normals = new List<Vector3>();
     //public List<Vector2> uvs = new List<Vector2>();
@@ -203,9 +204,9 @@ public class VoxelChunk
     MeshData md;
     MeshData grassmd;
 
-    int LoadVertex(Vector3 v, Vector3 n, Vector2 uv, int side)
+    ushort LoadVertex(Vector3 v, Vector3 n, Vector2 uv, int side)
     {
-        int index1;
+        ushort index1;
         bool pass = md.vertDictionary[side].TryGetValue(v, out index1);
         if (pass)
         {
@@ -213,7 +214,7 @@ public class VoxelChunk
         }
         else
         {
-            index1 = md.vertices.Count;
+            index1 = (ushort)md.vertices.Count;
             md.vertDictionary[side].Add(v, index1);
             md.vertices.Add(v);
             md.normals.Add(n);
@@ -233,7 +234,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, 1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(0,0),0),
                 LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n, uv+new Vector2(1,0),0),
                 LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),0),
@@ -259,7 +260,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, -1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i + 1, iii, ii) + offset,n,uv+new Vector2(0,0),1),
                 LoadVertex(new Vector3(i, iii, ii) + offset,n, uv+new Vector2(-1,0),1),
                 LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n,uv+new Vector2(0,1),1),
@@ -285,7 +286,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i + 1, iii, ii) + offset,n,uv+new Vector2(0,0),2),
                 LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n, uv+new Vector2(1,0),2),
                 LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n,uv+new Vector2(0,1),2),
@@ -311,7 +312,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(-1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii, ii + 1) + offset,n,uv+new Vector2(0,0),3),
                 LoadVertex(new Vector3(i, iii, ii) + offset,n, uv+new Vector2(-1,0),3),
                 LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),3),
@@ -337,7 +338,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, 0, 1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n,uv+new Vector2(0,0),4),
                 LoadVertex(new Vector3(i, iii, ii + 1) + offset,n, uv+new Vector2(-1,0),4),
                 LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),4),
@@ -363,7 +364,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, 0, -1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii, ii) + offset,n,uv+new Vector2(0,0),5),
                 LoadVertex(new Vector3(i + 1, iii, ii) + offset,n, uv+new Vector2(1,0),5),
                 LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(0,1),5),
@@ -396,12 +397,12 @@ public class VoxelChunk
             md.uvs.Add(new Vector2(1, 0));
             md.uvs.Add(new Vector2(0, 1));
             md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add(index);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 3);
+            md.indices[side[type, 2]].Add((ushort)index);
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 3));
         }
     }
 
@@ -422,12 +423,12 @@ public class VoxelChunk
             md.uvs.Add(new Vector2(1, 0));
             md.uvs.Add(new Vector2(0, 1));
             md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add(index);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 3);
+            md.indices[side[type, 2]].Add((ushort)index);
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 3));
         }
     }
 
@@ -448,12 +449,12 @@ public class VoxelChunk
             md.uvs.Add(new Vector2(1, 0));
             md.uvs.Add(new Vector2(0, 1));
             md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add(index);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 3);
+            md.indices[side[type, 2]].Add((ushort)index);
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 3));
         }
     }
 
@@ -474,12 +475,12 @@ public class VoxelChunk
             md.uvs.Add(new Vector2(1, 0));
             md.uvs.Add(new Vector2(0, 1));
             md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add(index);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 1);
-            md.indices[side[type, 2]].Add(index + 2);
-            md.indices[side[type, 2]].Add(index + 3);
+            md.indices[side[type, 2]].Add((ushort)index);
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 1));
+            md.indices[side[type, 2]].Add((ushort)(index + 2));
+            md.indices[side[type, 2]].Add((ushort)(index + 3));
         }
     }
 
@@ -494,7 +495,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, 1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(0,0),0),
                 LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n, uv+new Vector2(1,0),0),
                 LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),0),
@@ -520,7 +521,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, -1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i + 1, iii, ii) + offset,n,uv+new Vector2(0,0),1),
                 LoadVertex(new Vector3(i, iii, ii) + offset,n, uv+new Vector2(-1,0),1),
                 LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n,uv+new Vector2(0,1),1),
@@ -546,7 +547,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i + 1, iii, ii) + offset,n,uv+new Vector2(0,0),2),
                 LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n, uv+new Vector2(1,0),2),
                 LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n,uv+new Vector2(0,1),2),
@@ -572,7 +573,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(-1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii, ii + 1) + offset,n,uv+new Vector2(0,0),3),
                 LoadVertex(new Vector3(i, iii, ii) + offset,n, uv+new Vector2(-1,0),3),
                 LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),3),
@@ -598,7 +599,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, 0, 1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n,uv+new Vector2(0,0),4),
                 LoadVertex(new Vector3(i, iii, ii + 1) + offset,n, uv+new Vector2(-1,0),4),
                 LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),4),
@@ -624,7 +625,7 @@ public class VoxelChunk
         {
             Vector3 n = new Vector3(0, 0, -1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
-            int[] indexes = {
+            ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii, ii) + offset,n,uv+new Vector2(0,0),5),
                 LoadVertex(new Vector3(i + 1, iii, ii) + offset,n, uv+new Vector2(1,0),5),
                 LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(0,1),5),
@@ -638,6 +639,7 @@ public class VoxelChunk
             md.indices[side[type, 5]].Add(indexes[windingOrder[5]]);
         }
     }
+
     int[,] indexRotator =
     {
         { 0,2,1,1,2,3 },
@@ -667,11 +669,7 @@ public class VoxelChunk
             Vector3Int v = loadOrder[i];
             if (md.vertices.Count > maxVertices)
             {
-                terrain.worldChunk.GetNextMeshData = true;
-                while (terrain.worldChunk.GetNextMeshData)
-                {
-                    System.Threading.Thread.Sleep(1);
-                }
+                terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
             }
             int type = types[v.x * size * size + v.y * size + v.z];
@@ -703,11 +701,7 @@ public class VoxelChunk
             Vector3Int v = loadOrderReverse[i];
             if (md.vertices.Count > maxVertices)
             {
-                terrain.worldChunk.GetNextMeshData = true;
-                while (terrain.worldChunk.GetNextMeshData)
-                {
-                    System.Threading.Thread.Sleep(1);
-                }
+                terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
             }
             int type = types[v.x * size * size + v.y * size + v.z];
@@ -740,11 +734,7 @@ public class VoxelChunk
             Vector3Int v = loadOrder[i];
             if (md.vertices.Count > maxVertices)
             {
-                terrain.worldChunk.GetNextMeshData = true;
-                while (terrain.worldChunk.GetNextMeshData)
-                {
-                    System.Threading.Thread.Sleep(1);
-                }
+                terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
             }
             int type = types[v.x * size * size + v.y * size + v.z];
@@ -776,11 +766,7 @@ public class VoxelChunk
             Vector3Int v = loadOrderReverse[i];
             if (md.vertices.Count > maxVertices)
             {
-                terrain.worldChunk.GetNextMeshData = true;
-                while (terrain.worldChunk.GetNextMeshData)
-                {
-                    System.Threading.Thread.Sleep(1);
-                }
+                terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
             }
             int type = types[v.x * size * size + v.y * size + v.z];

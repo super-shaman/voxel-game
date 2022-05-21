@@ -10,6 +10,7 @@ public class Chunk : MonoBehaviour
     public WorldChunk chunk;
     public LODGroup lodGroup;
     Mesh colliderMesh;
+    bool physics = true;
 
     int physicsCount = 5;
     bool[] loadPhysics =
@@ -43,7 +44,7 @@ public class Chunk : MonoBehaviour
                 indexCount += md.indices[i].Count;
             }
         }
-        if (mf.mesh.vertices.Length > 0 && indexCount > 0)
+        if (physics && mf.mesh.vertices.Length > 0 && indexCount > 0)
         {
             if (colliderMesh == null)
             {
@@ -112,7 +113,7 @@ public class Chunk : MonoBehaviour
     public void Unload()
     {
         mf.mesh.Clear();
-        if (mc.sharedMesh != null)
+        if (physics && mc.sharedMesh != null)
         {
             mc.sharedMesh = null;
             colliderMesh.Clear();
@@ -144,6 +145,7 @@ public class Chunk : MonoBehaviour
     {
         //mr.sortingOrder = order;
     }
+
     /*public void load(int size, WorldChunk chunk, int index)
     {
         this.size = size;
