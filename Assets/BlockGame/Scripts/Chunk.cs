@@ -31,6 +31,7 @@ public class Chunk : MonoBehaviour
     {
         this.size = size;
         MeshData md = chunk.meshData[index];
+        //mf.mesh.MarkDynamic();
         mf.mesh.SetVertices(md.vertices);
         mf.mesh.SetUVs(0, md.uvs);
         mf.mesh.SetNormals(md.normals);
@@ -49,6 +50,7 @@ public class Chunk : MonoBehaviour
             if (colliderMesh == null)
             {
                 colliderMesh = new Mesh();
+                //colliderMesh.MarkDynamic();
                 colliderMesh.SetVertices(md.vertices);
                 colliderMesh.subMeshCount = physicsCount;
                 int counter = 0;
@@ -61,6 +63,7 @@ public class Chunk : MonoBehaviour
                     }
                 }
                 mc.sharedMesh = colliderMesh;
+                colliderMesh.Clear();
             }
             else
             {
@@ -76,6 +79,7 @@ public class Chunk : MonoBehaviour
                     }
                 }
                 mc.sharedMesh = colliderMesh;
+                colliderMesh.Clear();
             }
         }
         transform.position = new Vector3(chunk.index1 * size, 0, chunk.index2 * size);
@@ -116,7 +120,6 @@ public class Chunk : MonoBehaviour
         if (physics && mc.sharedMesh != null)
         {
             mc.sharedMesh = null;
-            colliderMesh.Clear();
         }
         /*LOD[] lods = lodGroup.GetLODs();
         lods[0].renderers = new Renderer[] { };

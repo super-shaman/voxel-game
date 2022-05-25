@@ -59,7 +59,7 @@ public class TerrainChunk
         {
             for (int ii = 0; ii < size; ii++)
             {
-                float height = (float)WorldNoise.GetHeight(index1 * size + i, index2 * size + ii,0)*512;
+                float height = GetHeight(index1 * size + i, index2 * size + ii,0)*512;
                 minH = height < minH ? height : minH;
                 maxH = height > maxH ? height : maxH;
                 heights[i * size + ii] = height;
@@ -67,7 +67,35 @@ public class TerrainChunk
         }
         maxH = maxH < 0 ? 0 : maxH;
     }
-    
+
+    public float GetHeight(double x, double y, int seed)
+    {
+        double h = 0;
+        int a = 0;
+        int am = 1;
+        int seeder = 0;
+        for (int iiii = 1; iiii <= 12; iiii++)
+        {
+            double height = 0;
+            double max = 0;
+            double amount = 1;
+            for (int iii = 0; iii < iiii; iii++)
+            {
+                height += WorldNoise.ValueCoherentNoise3D(x / amount, y / amount, seeder, seed) * amount;
+                seeder++;
+                max += amount;
+                amount *= 2;
+            }
+            height /= max;
+            h += height * am;
+            a += am;
+            am *= 2;
+        }
+        h /= a;
+        return (float)h;
+    }
+
+
     public void LoadVoxelChunks()
     {
         float minH = this.minH;

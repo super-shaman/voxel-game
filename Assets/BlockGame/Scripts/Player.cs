@@ -14,7 +14,10 @@ public class Player : MonoBehaviour
     void Start()
     {
         cam.opaqueSortMode = UnityEngine.Rendering.OpaqueSortMode.FrontToBack;
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 1;
     }
+
 
     bool forward;
     bool right;
