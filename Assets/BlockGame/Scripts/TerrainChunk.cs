@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class TerrainChunk
@@ -26,7 +21,7 @@ public class TerrainChunk
         heights = new float[size * size];
         this.chunkHeight = chunkHeight;
         this.chunkDepth = chunkDepth;
-        voxelChunks = new VoxelChunk[this.chunkHeight+ chunkDepth];
+        voxelChunks = new VoxelChunk[this.chunkHeight + chunkDepth];
     }
 
     public void Load(int index1, int index2)
@@ -45,7 +40,6 @@ public class TerrainChunk
             voxelChunks[chunkDepth + chunk.index3] = null;
         }
         loadedChunks.Clear();
-
     }
 
     float minH;
@@ -94,7 +88,6 @@ public class TerrainChunk
         h /= a;
         return (float)h;
     }
-
 
     public void LoadVoxelChunks()
     {
@@ -157,6 +150,10 @@ public class TerrainChunk
         {
             VoxelChunk chunk = loadedChunks[i];
             chunk.LoadGraphicsUpFast();
+        }
+        for (int i = 0; i < worldChunk.meshData.Count; i++)
+        {
+            worldChunk.meshData[i].Normalize();
         }
     }
 
@@ -240,7 +237,6 @@ public class TerrainChunk
 
     void SpawnTree(int i, int ii, int h)
     {
-
         for (int o = -2; o < 3; o++)
         {
             for (int oo = -2; oo < 3; oo++)

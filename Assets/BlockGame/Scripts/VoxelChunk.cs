@@ -14,16 +14,16 @@ public class VoxelChunk
     public int index3;
     int size;
 
-    //public List<Vector3> vertices = new List<Vector3>();
-    //public List<Vector3> normals = new List<Vector3>();
-    //public List<Vector2> uvs = new List<Vector2>();
-    //public List<List<int>> indices = new List<List<int>>();
-    //public List<Color> colors = new List<Color>();
-
     byte[] types;
     public VoxelChunk[] chunks = new VoxelChunk[3 * 3 * 3];
     TerrainChunk terrain;
     public bool hasGraphics;
+
+    Vector3 offset;
+    int maxVertices = 65000;
+    public static Vector3Int[] loadOrder;
+    public static Vector3Int[] loadOrderReverse;
+    MeshData md;
 
     public VoxelChunk(int size)
     {
@@ -201,11 +201,73 @@ public class VoxelChunk
         0,2,1,1,2,3
     };
 
-    MeshData md;
-    MeshData grassmd;
 
     ushort LoadVertex(Vector3 v, Vector3 n, Vector2 uv, int side)
     {
+        side = 0;
+        ushort index1;
+        bool pass = md.vertDictionary[side].TryGetValue(v, out index1);
+        if (pass)
+        {
+            if (Vector3.Dot(md.normals[index1].normalized, n) > -0.001f)
+            {
+                md.normals[index1] += n;
+            }else
+            {
+                side = 1;
+                index1 = 0;
+                pass = md.vertDictionary[side].TryGetValue(v, out index1);
+                if (pass)
+                {
+                    md.normals[index1] += n;
+                }
+                else
+                {
+                    index1 = (ushort)md.vertices.Count;
+                    md.vertDictionary[side].Add(v, index1);
+                    md.vertices.Add(v);
+                    md.normals.Add(n);
+                    md.uvs.Add(uv);
+                }
+            }
+            
+        }
+        else
+        {
+
+            side = 1;
+            ushort index2 = 0;
+            pass = md.vertDictionary[side].TryGetValue(v, out index2);
+            if (pass)
+            {
+                if (Vector3.Dot(md.normals[index2].normalized, n) > -0.001f)
+                {
+                    md.normals[index2] += n;
+                    index1 = index2;
+                }else
+                {
+                    index1 = (ushort)md.vertices.Count;
+                    md.vertDictionary[0].Add(v, index1);
+                    md.vertices.Add(v);
+                    md.normals.Add(n);
+                    md.uvs.Add(uv);
+                }
+            }
+            else 
+            {
+                index1 = (ushort)md.vertices.Count;
+                md.vertDictionary[0].Add(v, index1);
+                md.vertices.Add(v);
+                md.normals.Add(n);
+                md.uvs.Add(uv);
+            }
+        }
+        return index1;
+    }
+
+    ushort LoadVertexSmooth(Vector3 v, Vector3 n, Vector2 uv, int side)
+    {
+        side = 0;
         ushort index1;
         bool pass = md.vertDictionary[side].TryGetValue(v, out index1);
         if (pass)
@@ -653,11 +715,7 @@ public class VoxelChunk
         return indexRotator[r,index];
     }
 
-    Vector3 offset;
-    int maxVertices = 65000;
-    public static Vector3Int[] loadOrder;
-    public static Vector3Int[] loadOrderReverse;
-    
+
     public void LoadGraphicsUp()
     {
         md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
@@ -786,148 +844,5 @@ public class VoxelChunk
             }
         }
     }
-
-    /*
-    public void LoadGrassUp()
-    {
-    }
-
-    public void LoadGraphicsUp()
-    {
-        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-        offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-        offset *= size;
-        offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-        for (int i = 0; i < size; i++)
-        {
-            for (int ii = 0; ii < size; ii++)
-            {
-                for (int iii = 0; iii < size; iii++)
-                {
-                    if (md.vertices.Count > maxVertices)
-                    {
-                        terrain.worldChunk.GetNextMeshData = true;
-                        while (terrain.worldChunk.GetNextMeshData)
-                        {
-                            System.Threading.Thread.Sleep(1);
-                        }
-                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-                    }
-                    int type = types[i * size * size + ii * size + iii];
-                    if (type != 0)
-                    {
-                        if (blockShape[type] == 0)
-                        {
-                            LoadBottom(i, ii, iii, type);
-                            LoadLeft(i, ii, iii, type);
-                            LoadBack(i, ii, iii, type);
-                        }
-                        else
-                        {
-                            LoadDiagonal2Front(i, ii, iii, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 0) * 0.5f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 1) * 0.5f));
-                            LoadDiagonal1Back(i, ii, iii, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 0) * 0.5f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 1) * 0.5f));
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void LoadGrassDown()
-    {
-    }
-
-    public void LoadGraphicsDown()
-    {
-        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-        offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-        offset *= size;
-        offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-        for (int i = size - 1; i >= 0; i--)
-        {
-            for (int ii = size - 1; ii >= 0; ii--)
-            {
-                for (int iii = size - 1; iii >= 0; iii--)
-                {
-                    if (md.vertices.Count > maxVertices)
-                    {
-                        terrain.worldChunk.GetNextMeshData = true;
-                        while (terrain.worldChunk.GetNextMeshData)
-                        {
-                            System.Threading.Thread.Sleep(1);
-                        }
-                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-                    }
-                    int type = types[i * size * size + ii * size + iii];
-                    if (type != 0)
-                    {
-                        if (blockShape[type] == 0)
-                        {
-                            LoadTop(i, ii, iii, type);
-                            LoadRight(i, ii, iii, type);
-                            LoadForward(i, ii, iii, type);
-                        }
-                        else
-                        {
-                            LoadDiagonal1Front(i, ii, iii, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 0) * 0.5f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 1) * 0.5f));
-                            LoadDiagonal2Back(i, ii, iii, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 0) * 0.5f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, index3 * size + iii, 1) * 0.5f));
-                        }
-                    }
-                }
-            }
-        }
-    }*/
-
-    /*
-    void LoadVoxel(int i, int ii, int iii)
-    {
-        int type = types[i * size * size + ii * size + iii];
-        if (type == 0)
-        {
-            return;
-        }
-        if (blockShape[type] == 0)
-        {
-            LoadBlock(i, ii, iii, type);
-        }
-        else
-        {
-            LoadCross(i, ii, iii, type);
-        }
-    }
-
-    bool isTransparent(int type)
-    {
-        return type == 0 || type == 4 || type == 5;
-    }
-
-    int[,] indexRotator =
-    {
-        { 0,2,1,1,2,3 },
-        { 1,0,3,3,0,2 },
-        { 3,1,2,2,1,0 },
-        { 2,0,3,3,0,1 }
-    };
-
-    int rotateIndex(int r, int index)
-    {
-        return indexRotator[r, index];
-    }
-    Vector3 offset;
-    public void LoadGraphics()
-    {
-        offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-        offset *= size;
-        for (int i = 0; i < size; i++)
-        {
-            for (int ii = 0; ii < size; ii++)
-            {
-                for (int iii = 0; iii < size; iii++)
-                {
-                    LoadVoxel(i, ii, iii);
-                }
-            }
-        }
-    }
-*/
+    
 }

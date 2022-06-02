@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -7,18 +6,29 @@ public class Player : MonoBehaviour
 
     public Camera cam;
     public Rigidbody rb;
-    public Feet feet;
     bool flying = true;
     float speed = 1;
-
+    public WorldPosition wp;
+    Vector3 camLocalPosition;
     void Start()
     {
+        camLocalPosition = cam.transform.localPosition;
+        wp = new WorldPosition(new Vector3Int(), new Vector3());
         cam.opaqueSortMode = UnityEngine.Rendering.OpaqueSortMode.FrontToBack;
         Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 1;
     }
+    Vector3 previousLocalPosition = new Vector3();
+    public void SetWorldPos(Vector3 v)
+    {
+        previousLocalPosition = v;
+        wp.Add(v);
+    }
 
-
+    public void UpdateWorldPos()
+    {
+        transform.position = transform.position - previousLocalPosition;
+    }
     bool forward;
     bool right;
     bool left;
@@ -29,6 +39,7 @@ public class Player : MonoBehaviour
     bool paused = true;
     int jumpTimer = 0;
     bool jumping;
+    float zoom = 0;
 
     // Update is called once per frame
     void Update()
@@ -36,7 +47,7 @@ public class Player : MonoBehaviour
         //Debug.Log(rb.velocity.magnitude);
         if (Input.GetMouseButtonDown(0))
         {
-            if (paused)
+            if (!World.world.paused)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
@@ -109,8 +120,51 @@ public class Player : MonoBehaviour
         rotation.y += Input.GetAxis("Mouse Y");
         Quaternion q = Quaternion.Euler(-rotation.y, rotation.x, 0);
         cam.transform.rotation = q;
-        speed += Input.mouseScrollDelta.y;
-        speed = speed < 1 ? 1 : speed;
+        zoom += Input.mouseScrollDelta.y;
+        zoom = zoom < 0 ? 0 : zoom;
+        cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom;
+        UpdateSpeed();
+    }
+
+    float speedAdjustTimer = 0;
+    bool adjustingSpeed = false;
+    float speedDelta = 0;
+    void UpdateSpeed()
+    {
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            speed += 1;
+            speedDelta = 1;
+            speedAdjustTimer = 0;
+            adjustingSpeed = true;
+        }
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            speed -= 1;
+            speedDelta = -1;
+            speed = speed < 1 ? 1 : speed;
+            speedAdjustTimer = 0;
+            adjustingSpeed = true;
+        }
+        if (Input.GetKeyUp(KeyCode.UpArrow))
+        {
+            speedAdjustTimer = 0;
+            adjustingSpeed = false;
+        }
+        if (Input.GetKeyUp(KeyCode.DownArrow))
+        {
+            speedAdjustTimer = 0;
+            adjustingSpeed = false;
+        }
+        if (adjustingSpeed)
+        {
+            speedAdjustTimer += Time.deltaTime;
+            if (speedAdjustTimer >= 0.2)
+            {
+                speed += speedDelta;
+                speed = speed < 1 ? 1 : speed;
+            }
+        }
     }
 
     void Fly()
@@ -206,9 +260,6 @@ public class Player : MonoBehaviour
         {
             Walk();
         }
-        Quaternion q = Quaternion.Euler(0, rotation.x, 0);
-        transform.rotation = q;
-        rb.angularVelocity = new Vector3();
     }
 
     bool OnGround;

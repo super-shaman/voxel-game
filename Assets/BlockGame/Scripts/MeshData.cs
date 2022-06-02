@@ -1,8 +1,5 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 public class MeshData
@@ -29,7 +26,14 @@ public class MeshData
         vertDictionary.Add(new Dictionary<Vector3, ushort>());
         vertDictionary.Add(new Dictionary<Vector3, ushort>());
     }
-
+    public void Normalize()
+    {
+        for (int i = 0; i < normals.Count; i++)
+        {
+            //normals[i] += new Vector3(0, 0.0001f, 0);
+            normals[i].Normalize();
+        }
+    }
     public int lod = 0;
 
     public void Unload()
