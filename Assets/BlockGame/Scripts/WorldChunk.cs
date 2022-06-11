@@ -248,14 +248,23 @@ public class WorldChunk
         done = true;
     }
 
+    public static Vector2Int[] loadOrder;
+    public static Vector2Int[] loadOrderReverse;
     public void LoadGraphics()
     {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < loadOrder.Length; i++)
         {
-            for (int ii = 0; ii < size; ii++)
-            {
-                terrains[i, ii].LoadGraphics();
-            }
+            Vector2Int v = loadOrder[i];
+            terrains[v.x,v.y].LoadGraphicsDown();
+        }
+        for (int i = 0; i < loadOrderReverse.Length; i++)
+        {
+            Vector2Int v = loadOrderReverse[i];
+            terrains[v.x, v.y].LoadGraphicsUp();
+        }
+        for (int i = 0; i < meshData.Count; i++)
+        {
+            meshData[i].Normalize();
         }
         done = true;
     }

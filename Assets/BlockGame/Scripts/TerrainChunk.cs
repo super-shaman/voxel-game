@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class TerrainChunk
 {
@@ -86,6 +87,8 @@ public class TerrainChunk
             am *= 2;
         }
         h /= a;
+        double minh = Math.Abs(h) < 0.05 ? (h > 0 ? 0.05 : -0.05) : h;
+        h = h > 0.1f ? h * h * (1.0f + 10 * (h - 0.1f)) : h < 0 ? h : h * h * (h * 10) + h * (1.0f - h * 10);
         return (float)h;
     }
 
@@ -139,21 +142,20 @@ public class TerrainChunk
     }
 
 
-    public void LoadGraphics()
+    public void LoadGraphicsDown()
     {
         for (int i = loadedChunks.Count - 1; i >= 0; i--)
         {
             VoxelChunk chunk = loadedChunks[i];
             chunk.LoadGraphicsDownFast();
         }
+    }
+    public void LoadGraphicsUp()
+    {
         for (int i = 0; i < loadedChunks.Count; i++)
         {
             VoxelChunk chunk = loadedChunks[i];
             chunk.LoadGraphicsUpFast();
-        }
-        for (int i = 0; i < worldChunk.meshData.Count; i++)
-        {
-            worldChunk.meshData[i].Normalize();
         }
     }
 
@@ -291,10 +293,10 @@ public class TerrainChunk
             for (int ii = 0; ii < size; ii++)
             {
                 float height = heights[i * size + ii];
-                if (height > 0 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
+                if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
                 {
                     SpawnTree(i, ii, Mathf.FloorToInt(height));
-                } else if (height > 0)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
+                } else if (height > 1)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
                 {
                     SpawnGrass(i,ii, Mathf.FloorToInt(height));
                 }
