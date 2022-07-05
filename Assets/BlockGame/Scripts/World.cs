@@ -5,7 +5,8 @@ using System.Threading;
 using TMPro;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-
+using UnityEngine.Scripting;
+using UnityEditor;
 public class World : MonoBehaviour
 {
 
@@ -18,6 +19,10 @@ public class World : MonoBehaviour
 
     void Start()
     {
+        if (!Application.isEditor)
+        {
+            GarbageCollector.incrementalTimeSliceNanoseconds = 4000000;
+        }
         VoxelChunk.loadOrder = new Vector3Int[size * size * size];
         for (int i = 0; i < size; i++)
         {
@@ -116,14 +121,13 @@ public class World : MonoBehaviour
     }
 
     int size = 8;
-    int loadSize = (356+16);//64+32+2;
+    int loadSize = (256+16);//64+32+2;
     public int worldChunkSize = 1;
     int worldChunkLoadSize;
     int worldChunkSizer;
 
     TerrainChunk[,] terrains;
     WorldChunk[,] worldChunks;
-    List<Vector2Int> closest = new List<Vector2Int>();
 
     public static World world;
     List<TerrainChunk> terrainPool = new List<TerrainChunk>();
@@ -164,32 +168,6 @@ public class World : MonoBehaviour
         worldChunks = new WorldChunk[worldChunkLoadSize, worldChunkLoadSize];
         terrains = new TerrainChunk[loadSize, loadSize];
         Init();
-        List<Vector2Int> positions = new List<Vector2Int>();
-        for (int i = 0; i < worldChunkLoadSize; i++)
-        {
-            for (int ii = 0; ii < worldChunkLoadSize; ii++)
-            {
-                positions.Add(new Vector2Int(-worldChunkLoadSize / 2 + i, -worldChunkLoadSize / 2 + ii));
-            }
-        }
-        while (positions.Count > 1)
-        {
-            int c = 0;
-            for (int i = 1; i < positions.Count; i++)
-            {
-                if (positions[i].magnitude < positions[c].magnitude)
-                {
-                    c = i;
-                }
-            }
-            closest.Add(positions[c]);
-            positions.RemoveAt(c);
-        }
-        closest.Add(positions[0]);
-        for (int i = 0; i < closest.Count; i++)
-        {
-            //heightsToLoad.Add(worldChunks[closest[i].x+worldChunkLoadSize/2, closest[i].y+worldChunkLoadSize/2]);
-        }
         for (int i = 0; i < worldChunkLoadSize; i++)
         {
             for (int ii = 0; ii < worldChunkLoadSize; ii++)
@@ -324,156 +302,6 @@ public class World : MonoBehaviour
                 }
             }
         }
-        /*if (chunkMover.x > 0)
-        {
-            for (int i = previousChunkIndex.x; i < previousChunkIndex.x + chunkMover.x; i++)
-            {
-                for (int ii = 0; ii < worldChunkLoadSize; ii++)
-                {
-                    int ier = GetIndex(i);
-                    int iier = GetIndex(ii);
-                    WorldChunk chunk = worldChunks[ier, iier];
-                    int index1 = chunk.index1;
-                    int index2 = chunk.index2;
-                    Vector2Int v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                    bool should = false;
-                    while (v.magnitude > 0)
-                    {
-                        index1 += v.x;
-                        index2 += v.y;
-                        v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                        should = true;
-                    }
-                    if (should)
-                    {
-                        if (chunk.graphics != null)
-                        {
-                            unloadChunkGraphics.AddRange(chunk.graphics);
-                            chunk.graphics.Clear();
-                        }
-                        chunk.Unload();
-                        unloadChunks.Add(chunk);
-                        chunk.Load(index1, index2);
-                        chunk.Load();
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (int i = previousChunkIndex.x + worldChunkLoadSize + chunkMover.x; i < previousChunkIndex.x + worldChunkLoadSize; i++)
-            {
-                for (int ii = 0; ii < worldChunkLoadSize; ii++)
-                {
-                    int ier = GetIndex(i);
-                    int iier = GetIndex(ii);
-                    WorldChunk chunk = worldChunks[ier, iier];
-                    int index1 = chunk.index1;
-                    int index2 = chunk.index2;
-                    Vector2Int v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                    bool should = false;
-                    while (v.magnitude > 0)
-                    {
-                        index1 += v.x;
-                        index2 += v.y;
-                        v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                        should = true;
-                    }
-                    if (should)
-                    {
-                        if (chunk.graphics != null)
-                        {
-                            unloadChunkGraphics.AddRange(chunk.graphics);
-                            chunk.graphics.Clear();
-                        }
-                        chunk.Unload();
-                        unloadChunks.Add(chunk);
-                        chunk.Load(index1, index2);
-                        chunk.Load();
-                    }
-                }
-            }
-        }
-        previousChunkIndex.x = chunkIndex.x;
-        if (chunkMover.y > 0)
-        {
-            for (int i = previousChunkIndex.y; i < previousChunkIndex.y + chunkMover.y; i++)
-            {
-                for (int ii = 0; ii < worldChunkLoadSize; ii++)
-                {
-                    int ier = GetIndex(ii);
-                    int iier = GetIndex(i);
-                    WorldChunk chunk = worldChunks[ier, iier];
-                    int index1 = chunk.index1;
-                    int index2 = chunk.index2;
-                    Vector2Int v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                    bool should = false;
-                    while (v.magnitude > 0)
-                    {
-                        index1 += v.x;
-                        index2 += v.y;
-                        v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                        should = true;
-                    }
-                    if (should)
-                    {
-                        if (chunk.graphics != null)
-                        {
-                            unloadChunkGraphics.AddRange(chunk.graphics);
-                            chunk.graphics.Clear();
-                        }
-                        chunk.Unload();
-                        unloadChunks.Add(chunk);
-                        chunk.Load(index1, index2);
-                        chunk.Load();
-                    }
-                }
-            }
-        }
-        else
-        {
-
-            for (int i = previousChunkIndex.y + worldChunkLoadSize + chunkMover.y; i < previousChunkIndex.y + worldChunkLoadSize; i++)
-            {
-                for (int ii = 0; ii < worldChunkLoadSize; ii++)
-                {
-                    int ier = GetIndex(ii);
-                    int iier = GetIndex(i);
-                    WorldChunk chunk = worldChunks[ier, iier];
-                    int index1 = chunk.index1;
-                    int index2 = chunk.index2;
-                    Vector2Int v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                    bool should = false;
-                    while (v.magnitude > 0)
-                    {
-                        index1 += v.x;
-                        index2 += v.y;
-                        v = new Vector2Int(index1 - chunkIndex.x > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index1 - chunkIndex.x < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0,
-                        index2 - chunkIndex.y > worldChunkLoadSize / 2 - 1 ? -worldChunkLoadSize : index2 - chunkIndex.y < -worldChunkLoadSize / 2 ? worldChunkLoadSize : 0);
-                        should = true;
-                    }
-                    if (should)
-                    {
-                        if (chunk.graphics != null)
-                        {
-                            unloadChunkGraphics.AddRange(chunk.graphics);
-                            chunk.graphics.Clear();
-                        }
-                        chunk.Unload();
-                        unloadChunks.Add(chunk);
-                        chunk.Load(index1, index2);
-                        chunk.Load();
-                    }
-                }
-            }
-        }*/
         previousChunkIndex = chunkIndex;
         chunkMover = new Vector2Int();
     }
@@ -530,9 +358,8 @@ public class World : MonoBehaviour
         Vector2Int pos = currentPlayerPos;
         if (!UnloadingGraphics && playerPos.magnitude > mag)
         {
-            Vector2Int playerDist = (new Vector2Int(pos.x,pos.y) - new Vector2Int(chunkIndex.x * worldChunkSizer, chunkIndex.y * worldChunkSizer));
-            chunkMover = new Vector2Int(playerDist.x > 0 ? Mathf.FloorToInt(playerDist.x / worldChunkSizer) : Mathf.CeilToInt(playerDist.x / worldChunkSizer), playerDist.x > 0 ? Mathf.FloorToInt(playerDist.y / worldChunkSizer) : Mathf.CeilToInt(playerDist.y / worldChunkSizer));//new Vector2Int(playerDist.x > worldChunkSizer ? Mathf.FloorToInt(playerDist.x / worldChunkSizer) : playerDist.x < -worldChunkSizer ? Mathf.CeilToInt(playerDist.x / worldChunkSizer) : 0,
-                //playerDist.y > worldChunkSizer ? Mathf.FloorToInt(playerDist.y / worldChunkSizer) : playerDist.y < -worldChunkSizer ? Mathf.CeilToInt(playerDist.y / worldChunkSizer) : 0);
+            Vector2Int playerDist = (new Vector2Int(pos.x, pos.y) - new Vector2Int(chunkIndex.x * worldChunkSizer, chunkIndex.y * worldChunkSizer));
+            chunkMover = new Vector2Int(playerDist.x > 0 ? Mathf.FloorToInt(playerDist.x / worldChunkSizer) : Mathf.CeilToInt(playerDist.x / worldChunkSizer), playerDist.x > 0 ? Mathf.FloorToInt(playerDist.y / worldChunkSizer) : Mathf.CeilToInt(playerDist.y / worldChunkSizer));
         }
         if (previousChunkMover != chunkMover)
         {
@@ -688,6 +515,7 @@ public class World : MonoBehaviour
                         worldsToLoad.RemoveAt(i);
                         i--;
                         heightsToLoad.Add(wc);
+                        continue;
                     }
                     if (closest == null)
                     {
@@ -1040,6 +868,17 @@ public class World : MonoBehaviour
                 }
                 yield return new WaitForSeconds(0);
             }
+        }
+        else
+        {
+            RemoveGraphics = true;
+        }
+        LoadChunks = false;
+    }
+    IEnumerator UnloadGraphics()
+    {
+        if (!StopLoadingGraphics)
+        {
             while (unloadGraphics.Count > 0)
             {
                 Chunk c = unloadGraphics[0];
@@ -1054,7 +893,7 @@ public class World : MonoBehaviour
         {
             RemoveGraphics = true;
         }
-        LoadChunks = false;
+        UnloadingGraphics = false;
     }
 
     public bool paused = false;
@@ -1081,7 +920,6 @@ public class World : MonoBehaviour
         if (!loading && !LoadChunks)
         {
             thread = new Thread(LoadThread);
-            //thread.IsBackground = true;
             thread.Start();
             loading = true;
         }
@@ -1104,8 +942,7 @@ public class World : MonoBehaviour
                 graphicsToLoad.Clear();
                 LoadingGraphics = false;
             }
-            LoadGraphics();
-            playerPos = player.transform.position;// new Vector2(player.transform.position.x, player.transform., player.transform.position.z);
+            playerPos = player.transform.position;
             playerVel = player.rb.velocity;
             if (!reloadChunks)
             {
@@ -1117,12 +954,12 @@ public class World : MonoBehaviour
             {
                 unloadGraphics.AddRange(unloadChunkGraphics);
                 unloadChunkGraphics.Clear();
-                UnloadingGraphics = false;
             }
             done = false;
             loading = false;
             LoadChunks = true;
             StartCoroutine(LoadGraphics());
+            StartCoroutine(UnloadGraphics());
         }
     }
 
@@ -1138,8 +975,6 @@ public class World : MonoBehaviour
             System.Diagnostics.Process.GetCurrentProcess().Kill();
         }
     }
-
-    // Update is called once per frame
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))

@@ -32,7 +32,6 @@ public class Chunk : MonoBehaviour
     {
         this.size = size;
         MeshData md = chunk.meshData[index];
-        //mf.mesh.MarkDynamic();
         mf.mesh.SetVertices(md.vertices);
         mf.mesh.SetUVs(0, md.uvs);
         mf.mesh.SetNormals(md.normals);
@@ -46,13 +45,11 @@ public class Chunk : MonoBehaviour
                 indexCount += md.indices[i].Count;
             }
         }
-        //mf.mesh.RecalculateNormals();
         if (physics && mf.mesh.vertices.Length > 0 && indexCount > 0)
         {
             if (colliderMesh == null)
             {
                 colliderMesh = new Mesh();
-                //colliderMesh.MarkDynamic();
                 colliderMesh.SetVertices(md.vertices);
                 colliderMesh.subMeshCount = physicsCount;
                 int counter = 0;
@@ -85,8 +82,6 @@ public class Chunk : MonoBehaviour
             }
         }
         wp = new WorldPosition(new Vector3Int(chunk.index1 * size, 0, chunk.index2 * size),new Vector3());
-        //transform.position = new Vector3(chunk.index1 * size, 0, chunk.index2 * size);
-        //pos = transform.position;
         chunk.graphics.Add(this);
         chunk.graphics[chunk.graphics.Count-1].lodGroup.size = LODSize;
         chunk.graphics[chunk.graphics.Count - 1].lodGroup.localReferencePoint = new Vector3();
