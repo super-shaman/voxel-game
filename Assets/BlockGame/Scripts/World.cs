@@ -23,6 +23,13 @@ public class World : MonoBehaviour
         {
             GarbageCollector.incrementalTimeSliceNanoseconds = 4000000;
         }
+        LoadLoadOrder2();
+        LoadWorld();
+    }
+
+    void LoadLoadOrder()
+    {
+
         VoxelChunk.loadOrder = new Vector3Int[size * size * size];
         for (int i = 0; i < size; i++)
         {
@@ -117,11 +124,99 @@ public class World : MonoBehaviour
                 }
             }
         }
-        LoadWorld();
+    }
+
+    void LoadLoadOrder2()
+    {
+
+        Vector2Int[]  loaderderer = new Vector2Int[size * size];
+        for (int i = 0; i < size; i++)
+        {
+            for (int ii = 0; ii < size; ii++)
+            {
+                loaderderer[i * size + ii] = new Vector2Int(i, ii);
+            }
+        }
+        for (int i = 0; i < loaderderer.Length; i++)
+        {
+            Vector2Int wc = loaderderer[i];
+            for (int ii = i; ii < loaderderer.Length; ii++)
+            {
+                Vector2Int wc2 = loaderderer[ii];
+                if (wc.magnitude > wc2.magnitude)
+                {
+                    loaderderer[i] = wc2;
+                    loaderderer[ii] = wc;
+                    wc = wc2;
+                }
+            }
+        }
+        VoxelChunk.loadOrder = new Vector3Int[size * size * size];
+        for (int iii = 0; iii < size; iii++)
+        {
+            for (int i = 0; i < loaderderer.Length; i++)
+            {
+                Vector2Int v = loaderderer[i];
+                VoxelChunk.loadOrder[v.x * size * size + v.y * size + iii] = new Vector3Int(v.x, v.y, iii);
+            }
+        }
+        VoxelChunk.loadOrderReverse = new Vector3Int[size * size * size];
+        for (int iii = size-1; iii >= 0; iii--)
+        {
+            for (int i = loaderderer.Length-1; i >= 0; i--)
+            {
+                Vector2Int v = loaderderer[i];
+                VoxelChunk.loadOrderReverse[v.x * size * size + v.y * size + iii] = new Vector3Int(v.x, v.y, iii);
+            }
+        }
+        WorldChunk.loadOrder = new Vector2Int[worldChunkSize * worldChunkSize];
+        for (int i = 0; i < worldChunkSize; i++)
+        {
+            for (int ii = 0; ii < worldChunkSize; ii++)
+            {
+                WorldChunk.loadOrder[i * worldChunkSize + ii] = new Vector2Int(i, ii);
+            }
+        }
+        for (int i = 0; i < WorldChunk.loadOrder.Length; i++)
+        {
+            Vector2Int wc = WorldChunk.loadOrder[i];
+            for (int ii = i; ii < WorldChunk.loadOrder.Length; ii++)
+            {
+                Vector2Int wc2 = WorldChunk.loadOrder[ii];
+                if (wc.magnitude > wc2.magnitude)
+                {
+                    WorldChunk.loadOrder[i] = wc2;
+                    WorldChunk.loadOrder[ii] = wc;
+                    wc = wc2;
+                }
+            }
+        }
+        WorldChunk.loadOrderReverse = new Vector2Int[worldChunkSize * worldChunkSize];
+        for (int i = 0; i < worldChunkSize; i++)
+        {
+            for (int ii = 0; ii < worldChunkSize; ii++)
+            {
+                WorldChunk.loadOrderReverse[i * worldChunkSize + ii] = new Vector2Int(i, ii);
+            }
+        }
+        for (int i = 0; i < WorldChunk.loadOrderReverse.Length; i++)
+        {
+            Vector2Int wc = WorldChunk.loadOrderReverse[i];
+            for (int ii = i; ii < WorldChunk.loadOrderReverse.Length; ii++)
+            {
+                Vector2Int wc2 = WorldChunk.loadOrderReverse[ii];
+                if (wc.magnitude < wc2.magnitude)
+                {
+                    WorldChunk.loadOrderReverse[i] = wc2;
+                    WorldChunk.loadOrderReverse[ii] = wc;
+                    wc = wc2;
+                }
+            }
+        }
     }
 
     int size = 8;
-    int loadSize = (256+16);//64+32+2;
+    int loadSize = (356+16);//64+32+2;
     public int worldChunkSize = 1;
     int worldChunkLoadSize;
     int worldChunkSizer;

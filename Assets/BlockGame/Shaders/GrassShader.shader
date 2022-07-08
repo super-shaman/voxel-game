@@ -1,4 +1,4 @@
-Shader "Custom/TriPlanarCutOut"
+Shader "Custom/GrassShader"
 {
     Properties
     {
@@ -9,30 +9,35 @@ Shader "Custom/TriPlanarCutOut"
     }
     SubShader
     {
-	Tags { "Queue" = "AlphaTest" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
+	Tags { "Queue" = "AlphaTest" "RenderType" = "TransparentCutout" }
         LOD 200
 
         CGPROGRAM
         // Physically based Standard lighting model, and enable shadows on all light types
-        #pragma surface surf Standard addshadow vertex:vert
+        #pragma surface surf Standard addshadow vertex:vert 
 
         // Use shader model 3.0 target, to get nicer looking lighting
         #pragma target 3.0
 
         sampler2D _MainTex;
 
-        struct Input
-        {
-            float2 uv_MainTex;
-			float3 localCoord;
-			float3 localNormal;
-        };
+
+		struct Input
+		{
+			float2 uv_MainTex;
+			float dist;
+		};
 
 		void vert(inout appdata_full v, out Input data)
 		{
 			UNITY_INITIALIZE_OUTPUT(Input, data);
-			data.localCoord = v.vertex.xyz;
-			data.localNormal = v.normal.xyz;
+
+			float l = length(UnityObjectToViewPos(v.vertex));
+			if (l > 600.0)
+			{
+				v.vertex = 0.0 / 0.0;
+			}
+			data.dist = l;
 		}
 
         half _Glossiness;
@@ -48,28 +53,10 @@ Shader "Custom/TriPlanarCutOut"
 
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
-			float3 bf = normalize(abs(IN.localNormal));
-			bf /= dot(bf, (float3)1);
-
-			// Triplanar mapping
-			float2 tx = IN.localCoord.zy;
-			float2 ty = IN.localCoord.xz;
-			float2 tz = IN.localCoord.xy;
-
-			// Base color
-			half4 cx = tex2D(_MainTex, tx);// *bf.x;
-			half4 cy = tex2D(_MainTex, ty);// *bf.y;
-			half4 cz = tex2D(_MainTex, tz);// *bf.z;
-			float3 n = abs(IN.localNormal);
-
-
-			float3 blockPos = IN.localCoord - floor(IN.localCoord);
-			half4 cc = (blockPos.x < 0.0001 || blockPos.x > 0.9999 ? cx : half4(0, 0, 0, 1));
-			cc = (blockPos.y < 0.0001 || blockPos.y > 0.9999 ? cy : cc);
-			cc = (blockPos.z < 0.0001 || blockPos.z > 0.9999 ? cz : cc);
-			half4 color = cc * _Color;
-			clip((color.a - 0.5f));
-			float4 c = color;
+            // Albedo comes from a texture tinted by color
+			float4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
+			float l = IN.dist;
+			clip((c.a - 0.5f-(0.5f*(l > 300.0 ? (l - 300.0) / 300.0 : 0))));
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;

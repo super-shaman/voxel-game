@@ -86,15 +86,15 @@ public class WorldChunk
                 {
                     if (areHeightsLoaded)
                     {
-                        chunk.heightsLoaded--;
+                        chunk.heightsLoaded -= chunk.heightsLoaded <= 0 ? 0 : 1;
                     }
                     if (areChunksLoaded)
                     {
-                        chunk.chunksLoaded--;
+                        chunk.chunksLoaded -= chunk.chunksLoaded <= 0 ? 0 : 1;
                     }
                     if (areStructuresLoaded)
                     {
-                        chunk.structuresLoaded--;
+                        chunk.structuresLoaded -= chunk.structuresLoaded <= 0 ? 0 : 1;
                     }
                 }
             }

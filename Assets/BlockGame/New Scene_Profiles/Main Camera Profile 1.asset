@@ -35,4 +35,4 @@ MonoBehaviour:
     value: 180
   sampleCount:
     overrideState: 1
-    value: 32
+    value: 16

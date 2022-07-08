@@ -88,6 +88,10 @@ public class Chunk : MonoBehaviour
         this.chunk = chunk;
     }
 
+    public void EnableGrass()
+    {
+    }
+
     public void PositionChunk(WorldPosition pl)
     {
         pos = pl.Distance(wp);

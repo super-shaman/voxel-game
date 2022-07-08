@@ -122,7 +122,7 @@ MonoBehaviour:
   mr: {fileID: 3799502320375007404}
   mc: {fileID: 3799502320375007405}
   lodGroup: {fileID: -364497345738039743}
-  LODSize: 680
+  LODSize: 87.52941
 --- !u!205 &-364497345738039743
 LODGroup:
   m_ObjectHideFlags: 0
@@ -132,12 +132,12 @@ LODGroup:
   m_GameObject: {fileID: 3799502320375007406}
   serializedVersion: 2
   m_LocalReferencePoint: {x: 0, y: 0, z: 0}
-  m_Size: 128
+  m_Size: 87.52941
   m_FadeMode: 0
   m_AnimateCrossFading: 0
   m_LastLODIsBillboard: 0
   m_LODs:
-  - screenRelativeHeight: 0.060787756
+  - screenRelativeHeight: 0.06705292
     fadeTransitionWidth: 1
     renderers:
     - renderer: {fileID: 3799502320375007404}
