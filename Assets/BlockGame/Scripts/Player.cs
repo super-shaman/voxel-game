@@ -6,6 +6,7 @@ public class Player : MonoBehaviour
 
     public Camera cam;
     public Rigidbody rb;
+    public float jumpPower;
     bool flying = true;
     float speed = 1;
     public WorldPosition wp;
@@ -39,6 +40,7 @@ public class Player : MonoBehaviour
     bool paused = true;
     int jumpTimer = 0;
     bool jumping;
+    float jumpAnimation = 0;
     float zoom = 0;
 
     // Update is called once per frame
@@ -99,9 +101,8 @@ public class Player : MonoBehaviour
         {
             right = false;
         }
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (!jumping && Input.GetKeyDown(KeyCode.Space))
         {
-            jumping = false;
             up = true;
         }
         if (Input.GetKeyUp(KeyCode.Space))
@@ -122,7 +123,15 @@ public class Player : MonoBehaviour
         cam.transform.rotation = q;
         zoom += Input.mouseScrollDelta.y;
         zoom = zoom < 0 ? 0 : zoom;
-        cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom;
+        float jumpOffset = 0;
+        if (jumpAnimation != 1)
+        {
+            jumpAnimation += Time.deltaTime;
+            jumpAnimation = jumpAnimation > 1 ? 1 : jumpAnimation;
+            jumpOffset = jumpAnimation < 0.5f ? jumpAnimation * 2.0f : 1.0f-((jumpAnimation-0.5f) * 2.0f);
+            jumpOffset *= -0.5f;
+        }
+        cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom + new Vector3(0,jumpOffset,0);
         UpdateSpeed();
     }
 
@@ -195,6 +204,7 @@ public class Player : MonoBehaviour
 
     void Walk()
     {
+        rb.drag = 0.001f;
         Quaternion q = Quaternion.Euler(0, rotation.x, 0);
         Vector3 move = new Vector3();
         if (forward)
@@ -215,44 +225,54 @@ public class Player : MonoBehaviour
         }
         move = move.normalized;
         move *= (speed * speed);
-        if (OnGround)
+        if (!jumping && OnGround)
         {
-            rb.drag = 0.001f;
-            Vector3 newVel = Vector3.Lerp(rb.velocity, q * move, 0.5f);
-            newVel = newVel - rb.velocity;
-            newVel.y = 0;
-            rb.AddForce(newVel, ForceMode.VelocityChange);
             Vector3 vel = rb.velocity;
-            if (!jumping && up)
+            Vector3 newVel = Vector3.Lerp(vel, q * move, 0.5f);
+            newVel.y = 0;
+            float d = Vector3.Dot(newVel.normalized, currentImpulse.normalized);
+
+            d = (1.0f+d)/2.0f;
+            // d -= 0.5f;
+            // d = d < 0 ? 0 : d * 2;
+            rb.velocity = newVel;
+            if (up)
             {
                 jumping = true;
                 jumpTimer = 0;
-                rb.drag = 0.001f;
-                rb.velocity = new Vector3(vel.x, 10, vel.z);
-                OnGround = false;
+                jumpStrength = 0;
+                jumpAnimation = 0;
             }
         }else
         {
-            rb.drag = 0.001f;
-            Vector3 newVel = Vector3.Lerp(rb.velocity, q * move, 0.5f);
-            newVel = newVel - rb.velocity;
-            newVel.y = 0;
-            rb.AddForce(newVel, ForceMode.VelocityChange);
+            Vector3 vel = rb.velocity;
+            Vector3 newVel = Vector3.Lerp(vel, q * move, 0.5f);
+            newVel.y = vel.y;
+            float d = Vector3.Dot(newVel.normalized, currentImpulse.normalized);
+            d = (1.0f + d) / 2.0f;
+            // d -= 0.5f;
+            // d = d < 0 ? 0 : d * 2;
+            
+            rb.velocity = newVel;
         }
-    }
-
-    private void FixedUpdate()
-    {
         if (jumping)
         {
-            jumpTimer++;
-            OnGround = false;
-            if (jumpTimer >= 25)
+            jumpStrength = Mathf.Lerp(jumpStrength, jumpPower, 1.0f/2.0f);
+            Vector3 newVel = rb.velocity+new Vector3(0, jumpStrength, 0);
+            rb.velocity = newVel;
+            jumpTime++;
+            if (jumpTime == jumpSteps)
             {
-                jumpTimer = 0;
+                jumpTime = 0;
                 jumping = false;
             }
         }
+    }
+    float jumpStrength;
+    int jumpTime = 0;
+    int jumpSteps = 16;
+    private void FixedUpdate()
+    {
         if (flying)
         {
             Fly();
@@ -260,37 +280,55 @@ public class Player : MonoBehaviour
         {
             Walk();
         }
+        OnGround = false;
+        currentImpulse = new Vector3();
+        collisionCount = 0;
     }
 
     bool OnGround;
+    Vector3 currentImpulse = new Vector3();
+    int collisionCount = 0;
 
     private void OnCollisionEnter(Collision collision)
     {
+        bool counts = true;
         for (int i = 0; i < collision.contactCount; i++)
         {
             ContactPoint c = collision.contacts[i];
-            if (Vector3.Dot(c.normal, new Vector3(0, 1, 0)) > 0.9)
+            if (Vector3.Dot(c.normal, new Vector3(0, 1, 0)) > 0.975)
             {
                 OnGround = true;
+                counts = false;
             }
+        }
+        if (counts)
+        {
+            currentImpulse += collision.impulse;
+            collisionCount++;
         }
     }
 
     private void OnCollisionStay(Collision collision)
     {
+        bool counts = true;
         for (int i = 0; i < collision.contactCount; i++)
         {
             ContactPoint c = collision.contacts[i];
-            if (Vector3.Dot(c.normal, new Vector3(0, 1, 0)) > 0.9)
+            if (Vector3.Dot(c.normal, new Vector3(0, 1, 0)) > 0.975)
             {
                 OnGround = true;
+                counts = false;
             }
+        }
+        if (counts)
+        {
+            currentImpulse += collision.impulse;
+            collisionCount++;
         }
     }
 
     private void OnCollisionExit(Collision collision)
     {
-        OnGround = false;
     }
 
 }

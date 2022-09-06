@@ -216,7 +216,7 @@ public class World : MonoBehaviour
     }
 
     int size = 8;
-    int loadSize = (356+16);//64+32+2;
+    int loadSize = (256+16);//64+32+2;
     public int worldChunkSize = 1;
     int worldChunkLoadSize;
     int worldChunkSizer;
@@ -402,8 +402,6 @@ public class World : MonoBehaviour
     }
     
     Vector2Int currentPlayerPos = new Vector2Int();
-    bool StopLoadingGraphics = false;
-    bool RemoveGraphics = false;
     List<MeshData> meshDataPool = new List<MeshData>();
 
     void UnloadMeshData(WorldChunk wc)
@@ -921,8 +919,7 @@ public class World : MonoBehaviour
             return Instantiate(ChunkGraphics);
         }
     }
-    
-    int loadAmount = 1;
+   
     List<WorldChunk> loadGraphics = new List<WorldChunk>();
     bool reloadChunks = false;
     List<WorldChunk> dontLoad = new List<WorldChunk>();
@@ -941,52 +938,38 @@ public class World : MonoBehaviour
     
     IEnumerator LoadGraphics()
     {
-        if (!StopLoadingGraphics)
+        while (loadGraphics.Count > 0)
         {
-            while (loadGraphics.Count > 0)
+            WorldChunk wc = loadGraphics[0];
+            if (!wc.unloading)
             {
-                WorldChunk wc = loadGraphics[0];
-                if (!wc.unloading)
-                {
-                    Chunk c = GetChunk();
-                    c.load(worldChunkSizer, wc, 0);
-                    c.PositionChunk(player.wp);
-                    c.SetPosition();
-                    loadedGraphics.Add(c);
-                    unloadMeshData.Add(wc.meshData[0]);
-                    wc.meshData.RemoveAt(0);
-                }
-                if (wc.meshData.Count == 0)
-                {
-                    loadGraphics.RemoveAt(0);
-                    dontLoad.Add(wc);
-                }
-                yield return new WaitForSeconds(0);
+                Chunk c = GetChunk();
+                c.load(worldChunkSizer, wc, 0);
+                c.PositionChunk(player.wp);
+                c.SetPosition();
+                loadedGraphics.Add(c);
+                unloadMeshData.Add(wc.meshData[0]);
+                wc.meshData.RemoveAt(0);
             }
-        }
-        else
-        {
-            RemoveGraphics = true;
+            if (wc.meshData.Count == 0)
+            {
+                loadGraphics.RemoveAt(0);
+                dontLoad.Add(wc);
+            }
+            yield return new WaitForSeconds(0);
         }
         LoadChunks = false;
     }
     IEnumerator UnloadGraphics()
     {
-        if (!StopLoadingGraphics)
+        while (unloadGraphics.Count > 0)
         {
-            while (unloadGraphics.Count > 0)
-            {
-                Chunk c = unloadGraphics[0];
-                loadedGraphics.Remove(c);
-                unloadGraphics.RemoveAt(0);
-                c.Unload();
-                chunkPool.Add(c);
-                yield return new WaitForSeconds(0);
-            }
-        }
-        else
-        {
-            RemoveGraphics = true;
+            Chunk c = unloadGraphics[0];
+            loadedGraphics.Remove(c);
+            unloadGraphics.RemoveAt(0);
+            c.Unload();
+            chunkPool.Add(c);
+            yield return new WaitForSeconds(0);
         }
         UnloadingGraphics = false;
     }

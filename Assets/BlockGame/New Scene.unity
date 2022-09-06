@@ -823,7 +823,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   material: {fileID: 2100000, guid: 8a2580812d58b14448587d735b3d15d4, type: 2}
-  light: {fileID: 1481699624}
+  lightObj: {fileID: 1481699624}
 --- !u!114 &1365831863
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1047,9 +1047,10 @@ GameObject:
   - component: {fileID: 1470787234}
   - component: {fileID: 1470787230}
   - component: {fileID: 1470787235}
-  - component: {fileID: 1470787236}
   - component: {fileID: 1470787238}
   - component: {fileID: 1470787237}
+  - component: {fileID: 1470787239}
+  - component: {fileID: 1470787240}
   m_Layer: 0
   m_Name: Capsule
   m_TagString: Untagged
@@ -1071,6 +1072,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cam: {fileID: 1365831858}
   rb: {fileID: 1470787235}
+  jumpPower: 0.5
 --- !u!4 &1470787234
 Transform:
   m_ObjectHideFlags: 0
@@ -1102,20 +1104,7 @@ Rigidbody:
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 112
-  m_CollisionDetection: 1
---- !u!65 &1470787236
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1470787229}
-  m_Material: {fileID: 13400000, guid: 8060493c95c8c8240858efd33e5c431c, type: 2}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 0.75, y: 1.75, z: 0.75}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_CollisionDetection: 2
 --- !u!33 &1470787237
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1166,6 +1155,32 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &1470787239
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470787229}
+  m_Material: {fileID: 13400000, guid: 8060493c95c8c8240858efd33e5c431c, type: 2}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 0.75, y: 2, z: 0.75}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!135 &1470787240
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1470787229}
+  m_Material: {fileID: 13400000, guid: 8060493c95c8c8240858efd33e5c431c, type: 2}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.375
+  m_Center: {x: 0, y: -0.75, z: 0}
 --- !u!1 &1481699624
 GameObject:
   m_ObjectHideFlags: 0

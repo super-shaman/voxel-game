@@ -30,7 +30,6 @@ public class MeshData
     {
         for (int i = 0; i < normals.Count; i++)
         {
-            //normals[i] += new Vector3(0, 0.0001f, 0);
             normals[i].Normalize();
         }
     }

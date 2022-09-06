@@ -122,7 +122,7 @@ MonoBehaviour:
   mr: {fileID: 3799502320375007404}
   mc: {fileID: 3799502320375007405}
   lodGroup: {fileID: -364497345738039743}
-  LODSize: 87.52941
+  LODSize: 64
 --- !u!205 &-364497345738039743
 LODGroup:
   m_ObjectHideFlags: 0
