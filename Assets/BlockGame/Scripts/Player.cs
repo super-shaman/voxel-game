@@ -40,7 +40,6 @@ public class Player : MonoBehaviour
     bool paused = true;
     int jumpTimer = 0;
     bool jumping;
-    float jumpAnimation = 0;
     float zoom = 0;
 
     // Update is called once per frame
@@ -123,15 +122,7 @@ public class Player : MonoBehaviour
         cam.transform.rotation = q;
         zoom += Input.mouseScrollDelta.y;
         zoom = zoom < 0 ? 0 : zoom;
-        float jumpOffset = 0;
-        if (jumpAnimation != 1)
-        {
-            jumpAnimation += Time.deltaTime;
-            jumpAnimation = jumpAnimation > 1 ? 1 : jumpAnimation;
-            jumpOffset = jumpAnimation < 0.5f ? jumpAnimation * 2.0f : 1.0f-((jumpAnimation-0.5f) * 2.0f);
-            jumpOffset *= -0.5f;
-        }
-        cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom + new Vector3(0,jumpOffset,0);
+        cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom;
         UpdateSpeed();
     }
 
@@ -241,7 +232,6 @@ public class Player : MonoBehaviour
                 jumping = true;
                 jumpTimer = 0;
                 jumpStrength = 0;
-                jumpAnimation = 0;
             }
         }else
         {
@@ -257,7 +247,7 @@ public class Player : MonoBehaviour
         }
         if (jumping)
         {
-            jumpStrength = Mathf.Lerp(jumpStrength, jumpPower, 1.0f/2.0f);
+            jumpStrength = Mathf.Lerp(jumpStrength, jumpPower, 0.75f);
             Vector3 newVel = rb.velocity+new Vector3(0, jumpStrength, 0);
             rb.velocity = newVel;
             jumpTime++;
