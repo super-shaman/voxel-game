@@ -531,9 +531,20 @@ public class VoxelChunk
     public void LoadGraphicsUpFast()
     {
         md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-        offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-        offset *= size;
-        offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+        if (md.offset.magnitude == 0)
+        {
+            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            offset *= size;
+            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = offset;
+            offset = new Vector3();
+        }else
+        {
+            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            offset *= size;
+            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            offset -= md.offset;
+        }
         for (int i = 0; i < loadOrder.Length; i++)
         {
             Vector3Int v = loadOrder[i];
@@ -541,6 +552,11 @@ public class VoxelChunk
             {
                 terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                offset *= size;
+                offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                md.offset = offset;
+                offset = new Vector3();
             }
             int type = types[v.x * size * size + v.y * size + v.z];
             if (type != 0)
@@ -563,9 +579,20 @@ public class VoxelChunk
     public void LoadGraphicsDownFast()
     {
         md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-        offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-        offset *= size;
-        offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+        if (md.offset.magnitude == 0)
+        {
+            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            offset *= size;
+            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = offset;
+        }
+        else
+        {
+            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            offset *= size;
+            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            offset -= md.offset;
+        }
         for (int i = 0; i < loadOrderReverse.Length; i++)
         {
             Vector3Int v = loadOrderReverse[i];
@@ -573,6 +600,11 @@ public class VoxelChunk
             {
                 terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                offset *= size;
+                offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                md.offset = offset;
+                offset = new Vector3();
             }
             int type = types[v.x * size * size + v.y * size + v.z];
             if (type != 0)

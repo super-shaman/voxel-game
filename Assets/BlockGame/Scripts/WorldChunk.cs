@@ -194,6 +194,7 @@ public class WorldChunk
 
     public void LoadChunks()
     {
+        LoadVoxelChunks();
         for (int i = 0; i < size; i++)
         {
             for (int ii = 0; ii < size; ii++)
@@ -246,6 +247,7 @@ public class WorldChunk
         }
         areStructuresLoaded = true;
         done = true;
+        loading = false;
     }
 
     public static Vector2Int[] loadOrder;

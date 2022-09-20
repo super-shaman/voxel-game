@@ -54,6 +54,7 @@ public class MeshData
         {
             vertDictionary[i].Clear();
         }
+        offset = new Vector3();
     }
 
     public List<Vector3> vertices = new List<Vector3>();
@@ -62,5 +63,6 @@ public class MeshData
     public List<List<ushort>> indices = new List<List<ushort>>();
     public List<Color> colors = new List<Color>();
     public List<Dictionary<Vector3, ushort>> vertDictionary = new List<Dictionary<Vector3, ushort>>();
+    public Vector3 offset = new Vector3();
 
 }

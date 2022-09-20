@@ -27,6 +27,7 @@ public class Chunk : MonoBehaviour
 
     int size;
     LODGroup lodInstance;
+    Vector3 offset = new Vector3();
 
     public void load(int size, WorldChunk chunk, int index)
     {
@@ -81,6 +82,7 @@ public class Chunk : MonoBehaviour
                 colliderMesh.Clear();
             }
         }
+        offset = md.offset;
         wp = new WorldPosition(new Vector3Int(chunk.index1 * size, 0, chunk.index2 * size),new Vector3());
         chunk.graphics.Add(this);
         chunk.graphics[chunk.graphics.Count-1].lodGroup.size = LODSize;
@@ -99,11 +101,12 @@ public class Chunk : MonoBehaviour
 
     public void SetPosition()
     {
-        transform.position = pos;
+        transform.position = pos + offset;
     }
 
     public void Unload()
     {
+        offset = new Vector3();
         mf.mesh.Clear();
         if (physics && mc.sharedMesh != null)
         {
@@ -130,5 +133,11 @@ public class Chunk : MonoBehaviour
     {
         //mr.sortingOrder = order;
     }
-    
+    public void Destroy()
+    {
+        Unload();
+        DestroyImmediate(mf.mesh);
+        DestroyImmediate(gameObject);
+    }
+
 }
