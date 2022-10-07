@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Collections;
 using UnityEngine;
 
-public class VoxelChunk
+public class VoxelChunk : IComparable
 {
     
     public int index1;
@@ -24,11 +24,24 @@ public class VoxelChunk
     public static Vector3Int[] loadOrder;
     public static Vector3Int[] loadOrderReverse;
     MeshData md;
+    int memindex = 0;
+    static int memIndexer = 0;
+    public int CompareTo(object obj)
+    {
+        VoxelChunk other = (VoxelChunk)obj;
+        return other.memindex.CompareTo(memindex);
+    }
 
+    public int getMemIndex()
+    {
+        return memindex;
+    }
     public VoxelChunk(int size)
     {
         this.size = size;
         types = new byte[size * size * size];
+        memindex = memIndexer;
+        memIndexer++;
     }
 
     public void Load(int index1, int index2, int index3, TerrainChunk terrain)

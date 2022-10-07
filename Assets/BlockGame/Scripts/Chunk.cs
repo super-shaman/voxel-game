@@ -92,6 +92,7 @@ public class Chunk : MonoBehaviour
 
     public void EnableGrass()
     {
+
     }
 
     public void PositionChunk(WorldPosition pl)

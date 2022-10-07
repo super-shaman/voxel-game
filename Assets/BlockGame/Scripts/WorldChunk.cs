@@ -8,12 +8,12 @@ using UnityEngine;
 using System.Threading;
 
 
-public class WorldChunk
+public class WorldChunk : IComparable
 {
 
     public int index1;
     public int index2;
-    int size;
+    int worldChunkSize;
     TerrainChunk[,] terrains;
     public int indexOffset = 0;
     int heightsLoaded = 0;
@@ -22,21 +22,28 @@ public class WorldChunk
     bool areHeightsLoaded = false;
     bool areChunksLoaded = false;
     bool areStructuresLoaded = false;
+    bool LoadingGrapgics;
     public bool unloading;
     public WorldChunk[] chunks = new WorldChunk[3 * 3];
 
     public List<Chunk> graphics = new List<Chunk>();
     public List<MeshData> meshData = new List<MeshData>();
-    public int meshesLoaded = 0;
-
-    public WorldChunk(int size, int index1, int index2)
+    public int size = 0;
+    public static Vector2Int pos;
+    public WorldChunk(int size, int wcs, int index1, int index2)
     {
-        this.size = size;
+        this.size = wcs;
+        this.worldChunkSize = size;
         this.index1 = index1;
         this.index2 = index2;
         terrains = new TerrainChunk[size, size];
     }
 
+    public int CompareTo(object obj)
+    {
+        WorldChunk other = (WorldChunk)obj;
+        return (new Vector2(index1 * worldChunkSize * size, index2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(other.index1 * worldChunkSize * size, other.index2 * worldChunkSize * size) - pos).magnitude);
+    }
     public void Load(int index1, int index2)
     {
         this.index1 = index1;
@@ -105,14 +112,13 @@ public class WorldChunk
         areHeightsLoaded = false;
         areChunksLoaded = false;
         areStructuresLoaded = false;
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < worldChunkSize; i++)
         {
-            for (int ii = 0; ii < size; ii++)
+            for (int ii = 0; ii < worldChunkSize; ii++)
             {
                 terrains[i, ii].Unload();
             }
         }
-        meshesLoaded = 0;
     }
     
 
@@ -162,20 +168,20 @@ public class WorldChunk
 
     public void Load()
     {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < worldChunkSize; i++)
         {
-            for (int ii = 0; ii < size; ii++)
+            for (int ii = 0; ii < worldChunkSize; ii++)
             {
-                terrains[i, ii].Load(index1 * size + i, index2 * size + ii);
+                terrains[i, ii].Load(index1 * worldChunkSize + i, index2 * worldChunkSize + ii);
             }
         }
     }
 
     public void LoadHeights()
     {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < worldChunkSize; i++)
         {
-            for (int ii = 0; ii < size; ii++)
+            for (int ii = 0; ii < worldChunkSize; ii++)
             {
                 terrains[i, ii].LoadHeights();
             }
@@ -194,10 +200,9 @@ public class WorldChunk
 
     public void LoadChunks()
     {
-        LoadVoxelChunks();
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < worldChunkSize; i++)
         {
-            for (int ii = 0; ii < size; ii++)
+            for (int ii = 0; ii < worldChunkSize; ii++)
             {
                 terrains[i, ii].LoadChunks();
             }
@@ -207,9 +212,9 @@ public class WorldChunk
     }
     public void LoadVoxelChunks()
     {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < worldChunkSize; i++)
         {
-            for (int ii = 0; ii < size; ii++)
+            for (int ii = 0; ii < worldChunkSize; ii++)
             {
                 terrains[i, ii].LoadVoxelChunks();
             }
@@ -238,9 +243,9 @@ public class WorldChunk
     public bool loading;
     public void LoadStructures()
     {
-        for (int i = 0; i < size; i++)
+        for (int i = 0; i < worldChunkSize; i++)
         {
-            for (int ii = 0; ii < size; ii++)
+            for (int ii = 0; ii < worldChunkSize; ii++)
             {
                 terrains[i, ii].LoadStructures();
             }
@@ -270,7 +275,5 @@ public class WorldChunk
         }
         done = true;
     }
-
-
 
 }

@@ -58,6 +58,14 @@ public class TerrainChunk
                 minH = height < minH ? height : minH;
                 maxH = height > maxH ? height : maxH;
                 heights[i * size + ii] = height;
+                /*if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
+                {
+                    SpawnTree(i, ii, Mathf.FloorToInt(height));
+                }
+                else if (height > 1)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
+                {
+                    SpawnGrass(i, ii, Mathf.FloorToInt(height));
+                }*/
             }
         }
         maxH = maxH < 0 ? 0 : maxH;

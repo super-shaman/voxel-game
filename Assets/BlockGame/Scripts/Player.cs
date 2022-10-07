@@ -188,7 +188,7 @@ public class Player : MonoBehaviour
             move += new Vector3(1, 0, 0);
         }
         move = move.normalized;
-        move *= (speed * speed);
+        move *= 1+(speed * speed*0.5f);
         rb.AddForce(q * move - Physics.gravity);
         rb.drag = 3;
     }
@@ -215,7 +215,7 @@ public class Player : MonoBehaviour
             move += new Vector3(1, 0, 0);
         }
         move = move.normalized;
-        move *= (speed * speed);
+        move *= 1 + (speed * speed * 0.25f);
         if (!jumping && OnGround)
         {
             Vector3 vel = rb.velocity;

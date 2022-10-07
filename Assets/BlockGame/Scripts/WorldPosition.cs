@@ -16,6 +16,11 @@ public class WorldPosition
         posIndex = wp.posIndex;
         posOffset = wp.posOffset;
     }
+    public void Set(WorldPosition wp)
+    {
+        posIndex = wp.posIndex;
+        posOffset = wp.posOffset;
+    }
 
     void Trim()
     {
