@@ -11,7 +11,7 @@ public class Chunk : MonoBehaviour
     Mesh colliderMesh;
     bool physics = true;
     public WorldPosition wp;
-    public float LODSize;
+    public static float LODSize;
 
     int physicsCount = 5;
     bool[] loadPhysics =
@@ -85,14 +85,20 @@ public class Chunk : MonoBehaviour
         offset = md.offset;
         wp = new WorldPosition(new Vector3Int(chunk.index1 * size, 0, chunk.index2 * size),new Vector3());
         chunk.graphics.Add(this);
-        chunk.graphics[chunk.graphics.Count-1].lodGroup.size = LODSize;
-        chunk.graphics[chunk.graphics.Count - 1].lodGroup.localReferencePoint = new Vector3();
+        lodGroup.size = LODSize;
+        lodGroup.localReferencePoint = new Vector3();
         this.chunk = chunk;
     }
 
     public void EnableGrass()
     {
 
+    }
+
+    public void SetDrawDistance()
+    {
+        lodGroup.size = LODSize;
+        lodGroup.localReferencePoint = new Vector3();
     }
 
     public void PositionChunk(WorldPosition pl)

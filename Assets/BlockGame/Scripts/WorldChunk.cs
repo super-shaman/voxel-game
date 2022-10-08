@@ -38,11 +38,18 @@ public class WorldChunk : IComparable
         this.index2 = index2;
         terrains = new TerrainChunk[size, size];
     }
-
+    public static bool ReverseSort;
     public int CompareTo(object obj)
     {
         WorldChunk other = (WorldChunk)obj;
-        return (new Vector2(index1 * worldChunkSize * size, index2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(other.index1 * worldChunkSize * size, other.index2 * worldChunkSize * size) - pos).magnitude);
+        if (!ReverseSort)
+        {
+            return (new Vector2(other.index1 * worldChunkSize * size, other.index2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(index1 * worldChunkSize * size, index2 * worldChunkSize * size) - pos).magnitude);
+        }
+        else
+        {
+            return (index1 > index2 ? index1 - pos.x : index2 - pos.y).CompareTo((other.index1 > other.index2 ? other.index1 - pos.x : other.index2 - pos.y));
+        }
     }
     public void Load(int index1, int index2)
     {
