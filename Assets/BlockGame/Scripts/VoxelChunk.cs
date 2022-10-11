@@ -29,7 +29,7 @@ public class VoxelChunk : IComparable
     public int CompareTo(object obj)
     {
         VoxelChunk other = (VoxelChunk)obj;
-        return other.memindex.CompareTo(memindex);
+        return index3.CompareTo(other.index3);
     }
 
     public int getMemIndex()

@@ -149,6 +149,10 @@ public class TerrainChunk
         }
     }
 
+    public void SortVoxelChunks()
+    {
+        loadedChunks.Sort();
+    }
 
     public void LoadGraphicsDown()
     {

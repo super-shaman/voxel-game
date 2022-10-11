@@ -80,11 +80,19 @@ public class WorldChunk : IComparable
                 }
             }
         }
+        for (int i = 0; i < worldChunkSize; i++)
+        {
+            for (int ii = 0; ii < worldChunkSize; ii++)
+            {
+                terrains[i, ii].Load(index1 * worldChunkSize + i, index2 * worldChunkSize + ii);
+            }
+        }
     }
 
     public void AddTerrain(TerrainChunk terrain, int i, int ii)
     {
         terrains[i,ii] = terrain;
+        terrain.Load(index1 * worldChunkSize + i, index2 * worldChunkSize + ii);
         terrain.worldChunk = this;
     }
 
@@ -172,18 +180,7 @@ public class WorldChunk : IComparable
             }
         }
     }
-
-    public void Load()
-    {
-        for (int i = 0; i < worldChunkSize; i++)
-        {
-            for (int ii = 0; ii < worldChunkSize; ii++)
-            {
-                terrains[i, ii].Load(index1 * worldChunkSize + i, index2 * worldChunkSize + ii);
-            }
-        }
-    }
-
+    
     public void LoadHeights()
     {
         for (int i = 0; i < worldChunkSize; i++)
@@ -266,14 +263,15 @@ public class WorldChunk : IComparable
     public static Vector2Int[] loadOrderReverse;
     public void LoadGraphics()
     {
-        for (int i = 0; i < loadOrder.Length; i++)
-        {
-            Vector2Int v = loadOrder[i];
-            terrains[v.x,v.y].LoadGraphicsDown();
-        }
         for (int i = 0; i < loadOrderReverse.Length; i++)
         {
             Vector2Int v = loadOrderReverse[i];
+            terrains[v.x, v.y].SortVoxelChunks();
+            terrains[v.x,v.y].LoadGraphicsDown();
+        }
+        for (int i = 0; i < loadOrder.Length; i++)
+        {
+            Vector2Int v = loadOrder[i];
             terrains[v.x, v.y].LoadGraphicsUp();
         }
         for (int i = 0; i < meshData.Count; i++)
