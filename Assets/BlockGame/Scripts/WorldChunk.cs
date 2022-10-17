@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections;
 using UnityEngine;
 using System.Threading;
 
@@ -48,7 +44,11 @@ public class WorldChunk : IComparable
         }
         else
         {
-            return (index1 > index2 ? index1 - pos.x : index2 - pos.y).CompareTo((other.index1 > other.index2 ? other.index1 - pos.x : other.index2 - pos.y));
+            int m1 = Mathf.Abs(index1 * worldChunkSize * size - pos.x);
+            int m2 = Mathf.Abs(index2 * worldChunkSize * size - pos.y);
+            int m3 = Mathf.Abs(other.index1 * worldChunkSize * size - pos.x);
+            int m4 = Mathf.Abs(other.index2 * worldChunkSize * size - pos.y);
+            return (m1 > m2 ? m1 : m2).CompareTo(m3 > m4 ? m3 : m4);
         }
     }
     public void Load(int index1, int index2)

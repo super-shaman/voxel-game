@@ -28,6 +28,7 @@ public class Chunk : MonoBehaviour
     int size;
     LODGroup lodInstance;
     Vector3 offset = new Vector3();
+    bool loaded = false;
 
     public void load(int size, WorldChunk chunk, int index)
     {
@@ -88,6 +89,7 @@ public class Chunk : MonoBehaviour
         lodGroup.size = LODSize;
         lodGroup.localReferencePoint = new Vector3();
         this.chunk = chunk;
+        loaded = true;
     }
 
     public void EnableGrass()
@@ -101,13 +103,16 @@ public class Chunk : MonoBehaviour
         lodGroup.localReferencePoint = new Vector3();
     }
 
+    Vector3 pos;
     public void PositionChunk(WorldPosition pl)
     {
+        if (!loaded) return;
         pos = pl.Distance(wp);
     }
 
     public void SetPosition()
     {
+        if (!loaded) return;
         transform.position = pos + offset;
     }
 
@@ -120,26 +125,14 @@ public class Chunk : MonoBehaviour
             mc.sharedMesh = null;
         }
         gameObject.SetActive(false);
+        loaded = false;
     }
 
     public void Reload()
     {
         gameObject.SetActive(true);
     }
-
-    public static Vector3 PlayerPos = new Vector3();
-    Vector3 pos;
-    int order = 0;
-
-    public void Sort()
-    {
-        order = (int)-(PlayerPos - pos).magnitude;
-    }
-
-    public void SetOrder()
-    {
-        //mr.sortingOrder = order;
-    }
+    
     public void Destroy()
     {
         Unload();

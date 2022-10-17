@@ -1,9 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Scripting;
-using System.Threading;
 public class MainMenu : MonoBehaviour
 {
     

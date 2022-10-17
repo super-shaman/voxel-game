@@ -221,11 +221,12 @@ public class Player : MonoBehaviour
             Vector3 vel = rb.velocity;
             Vector3 newVel = Vector3.Lerp(vel, q * move, 0.5f);
             newVel.y = 0;
-            float d = Vector3.Dot(newVel.normalized, currentImpulse.normalized);
-
-            d = (1.0f+d)/2.0f;
+            float d = Vector3.Dot(new Vector3(newVel.x, newVel.z).normalized, new Vector3(currentImpulse.x, currentImpulse.z).normalized);
+            d = (1.0f + d) / 2.0f * 0.5f + 0.5f;
             // d -= 0.5f;
             // d = d < 0 ? 0 : d * 2;
+            newVel.x *= d;
+            newVel.z *= d;
             rb.velocity = newVel;
             if (up)
             {
@@ -238,11 +239,12 @@ public class Player : MonoBehaviour
             Vector3 vel = rb.velocity;
             Vector3 newVel = Vector3.Lerp(vel, q * move, 0.5f);
             newVel.y = vel.y;
-            float d = Vector3.Dot(newVel.normalized, currentImpulse.normalized);
-            d = (1.0f + d) / 2.0f;
+            float d = Vector3.Dot(new Vector3(newVel.x,newVel.z).normalized, new Vector3(currentImpulse.x,currentImpulse.z).normalized);
+            d = (1.0f + d) / 2.0f*0.5f+0.5f;
             // d -= 0.5f;
             // d = d < 0 ? 0 : d * 2;
-            
+            newVel.x *= d;
+            newVel.z *= d;
             rb.velocity = newVel;
         }
         if (jumping)
