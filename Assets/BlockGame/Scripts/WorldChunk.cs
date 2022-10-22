@@ -261,6 +261,7 @@ public class WorldChunk : IComparable
 
     public static Vector2Int[] loadOrder;
     public static Vector2Int[] loadOrderReverse;
+
     public void LoadGraphics()
     {
         for (int i = 0; i < loadOrderReverse.Length; i++)

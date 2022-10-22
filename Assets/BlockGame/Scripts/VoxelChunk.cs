@@ -31,6 +31,7 @@ public class VoxelChunk : IComparable
     {
         return memindex;
     }
+
     public VoxelChunk(int size)
     {
         this.size = size;
@@ -368,20 +369,15 @@ public class VoxelChunk : IComparable
 
     void LoadTopFast(int i, int ii, int iii, int type)
     {
-        int t = GetType(i, ii, iii + 1);
-        if (t == -1)
-        {
-            return;
-        }
-        if (solid[type] ? transparent[t] : fast[t] && transparent[t])
+        if (visible[5])
         {
             Vector3 n = new Vector3(0, 1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(0,0),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n, uv+new Vector2(1,0),0),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,n,uv+new Vector2(1,1),0)
+                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[2] ? -1 : 0),uv+new Vector2(0,0),0),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[2] ? -1 : 0), uv+new Vector2(1,0),0),
+                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[3] ? 1 : 0),uv+new Vector2(0,1),0),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[3] ? 1 : 0),uv+new Vector2(1,1),0)
             };
             md.indices[side[type, 0]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 0]].Add(indexes[windingOrder[1]]);
@@ -394,20 +390,15 @@ public class VoxelChunk : IComparable
 
     void LoadBottomFast(int i, int ii, int iii, int type)
     {
-        int t = GetType(i, ii, iii - 1);
-        if (t == -1)
-        {
-            return;
-        }
-        if (solid[type] ? transparent[t] : fast[t] && transparent[t])
+        if (visible[4])
         {
             Vector3 n = new Vector3(0, -1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,n,uv+new Vector2(0,0),1),
-                LoadVertex(new Vector3(i, iii, ii) + offset,n, uv+new Vector2(-1,0),1),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n,uv+new Vector2(0,1),1),
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,n,uv+new Vector2(-1,1),1)
+                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[2] ? -1 : 0),uv+new Vector2(0,0),1),
+                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[2] ? -1 : 0), uv+new Vector2(-1,0),1),
+                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[3] ? 1 : 0),uv+new Vector2(0,1),1),
+                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[3] ? 1 : 0),uv+new Vector2(-1,1),1)
             };
             md.indices[side[type, 1]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 1]].Add(indexes[windingOrder[1]]);
@@ -420,20 +411,15 @@ public class VoxelChunk : IComparable
 
     void LoadRightFast(int i, int ii, int iii, int type)
     {
-        int t = GetType(i + 1, ii, iii);
-        if (t == -1)
-        {
-            return;
-        }
-        if (solid[type] ? transparent[t] : fast[t] && transparent[t])
+        if (visible[1])
         {
             Vector3 n = new Vector3(1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,n,uv+new Vector2(0,0),2),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n, uv+new Vector2(1,0),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n,uv+new Vector2(0,1),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,n,uv+new Vector2(1,1),2)
+                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[2] ? -1 : 0),uv+new Vector2(0,0),2),
+                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[3] ? 1 : 0), uv+new Vector2(1,0),2),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[2] ? -1 : 0),uv+new Vector2(0,1),2),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[3] ? 1 : 0),uv+new Vector2(1,1),2)
             };
             md.indices[side[type, 2]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 2]].Add(indexes[windingOrder[1]]);
@@ -446,20 +432,15 @@ public class VoxelChunk : IComparable
 
     void LoadLeftFast(int i, int ii, int iii, int type)
     {
-        int t = GetType(i - 1, ii, iii);
-        if (t == -1)
-        {
-            return;
-        }
-        if (solid[type] ? transparent[t] : fast[t] && transparent[t])
+        if (visible[0])
         {
             Vector3 n = new Vector3(-1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,n,uv+new Vector2(0,0),3),
-                LoadVertex(new Vector3(i, iii, ii) + offset,n, uv+new Vector2(-1,0),3),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),3),
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(-1,1),3)
+                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[3] ? 1 : 0),uv+new Vector2(0,0),3),
+                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[2] ? -1 : 0), uv+new Vector2(-1,0),3),
+                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[3] ? 1 : 0),uv+new Vector2(0,1),3),
+                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[2] ? -1 : 0),uv+new Vector2(-1,1),3)
             };
             md.indices[side[type, 3]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 3]].Add(indexes[windingOrder[1]]);
@@ -472,20 +453,15 @@ public class VoxelChunk : IComparable
 
     void LoadForwardFast(int i, int ii, int iii, int type)
     {
-        int t = GetType(i, ii + 1, iii);
-        if (t == -1)
-        {
-            return;
-        }
-        if (solid[type] ? transparent[t] : fast[t] && transparent[t])
+        if (visible[3])
         {
             Vector3 n = new Vector3(0, 0, 1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,n,uv+new Vector2(0,0),4),
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,n, uv+new Vector2(-1,0),4),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,n,uv+new Vector2(0,1),4),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,n,uv+new Vector2(-1,1),4)
+                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, 1),uv+new Vector2(0,0),4),
+                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, 1), uv+new Vector2(-1,0),4),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, 1),uv+new Vector2(0,1),4),
+                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, 1),uv+new Vector2(-1,1),4)
             };
             md.indices[side[type, 4]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 4]].Add(indexes[windingOrder[1]]);
@@ -498,20 +474,15 @@ public class VoxelChunk : IComparable
 
     void LoadBackFast(int i, int ii, int iii, int type)
     {
-        int t = GetType(i, ii - 1, iii);
-        if (t == -1)
-        {
-            return;
-        }
-        if (solid[type] ? transparent[t] : fast[t] && transparent[t])
+        if (visible[2])
         {
             Vector3 n = new Vector3(0, 0, -1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii) + offset,n,uv+new Vector2(0,0),5),
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,n, uv+new Vector2(1,0),5),
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,n,uv+new Vector2(0,1),5),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,n,uv+new Vector2(1,1),5)
+                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, -1),uv+new Vector2(0,0),5),
+                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, -1), uv+new Vector2(1,0),5),
+                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, -1),uv+new Vector2(0,1),5),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, -1),uv+new Vector2(1,1),5)
             };
             md.indices[side[type, 5]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 5]].Add(indexes[windingOrder[1]]);
@@ -534,7 +505,8 @@ public class VoxelChunk : IComparable
     {
         return indexRotator[r,index];
     }
-
+    
+    bool[] visible = new bool[6];
 
     public void LoadGraphicsUpFast()
     {
@@ -571,6 +543,18 @@ public class VoxelChunk : IComparable
             {
                 if (blockShape[type] == 0)
                 {
+                    int t = GetType(v.x - 1, v.y, v.z);
+                    visible[0] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x + 1, v.y, v.z);
+                    visible[1] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y-1, v.z);
+                    visible[2] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y+1, v.z);
+                    visible[3] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y, v.z-1);
+                    visible[4] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y, v.z+1);
+                    visible[5] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
                     LoadBottomFast(v.x, v.y, v.z, type);
                     LoadLeftFast(v.x, v.y, v.z, type);
                     LoadBackFast(v.x, v.y, v.z, type);
@@ -619,6 +603,18 @@ public class VoxelChunk : IComparable
             {
                 if (blockShape[type] == 0)
                 {
+                    int t = GetType(v.x - 1, v.y, v.z);
+                    visible[0] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x + 1, v.y, v.z);
+                    visible[1] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y - 1, v.z);
+                    visible[2] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y + 1, v.z);
+                    visible[3] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y, v.z - 1);
+                    visible[4] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
+                    t = GetType(v.x, v.y, v.z + 1);
+                    visible[5] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
                     LoadTopFast(v.x, v.y, v.z, type);
                     LoadRightFast(v.x, v.y, v.z, type);
                     LoadForwardFast(v.x, v.y, v.z, type);

@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
         camLocalPosition = cam.transform.localPosition;
         wp = new WorldPosition(new Vector3Int(), new Vector3());
         cam.opaqueSortMode = UnityEngine.Rendering.OpaqueSortMode.FrontToBack;
+        cam.transparencySortMode = TransparencySortMode.Perspective;
         Application.targetFrameRate = 60;
         QualitySettings.vSyncCount = 1;
     }
@@ -187,9 +188,9 @@ public class Player : MonoBehaviour
         {
             move += new Vector3(1, 0, 0);
         }
-        move = move.normalized;
+        move = q*move.normalized;
         move *= 1+(speed * speed*0.5f);
-        rb.AddForce(q * move - Physics.gravity);
+        rb.velocity = Vector3.Lerp(rb.velocity,move,0.25f);
         rb.drag = 3;
     }
 
