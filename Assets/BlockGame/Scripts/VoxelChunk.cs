@@ -15,7 +15,6 @@ public class VoxelChunk : IComparable
     public bool hasGraphics;
 
     Vector3 offset;
-    int maxVertices = 65000;
     public static Vector3Int[] loadOrder;
     public static Vector3Int[] loadOrderReverse;
     MeshData md;
@@ -84,6 +83,11 @@ public class VoxelChunk : IComparable
         }
     }
 
+    public int GetTypeFast(int i, int ii, int iii)
+    {
+        return types[i * size * size + ii * size + iii];
+    }
+
     int GetType(int i, int ii, int iii)
     {
         if (i >= 0 && i < size && ii >= 0 && ii < size && iii >= 0 && iii < size)
@@ -136,10 +140,11 @@ public class VoxelChunk : IComparable
 
     public void SetType(int i, int ii, int iii, int type)
     {
+        if (solid[types[i * size * size + ii * size + iii]]) return;
         types[i * size * size + ii * size + iii] = (byte)type;
     }
 
-    int[,] side = {
+    public static int[,] side = {
         {0,0,0,0,0,0},
         {0,0,0,0,0,0},
         {1,0,2,2,2,2 },
@@ -149,7 +154,7 @@ public class VoxelChunk : IComparable
         {6,6,6,6,6,6 }
     };
 
-    int[] blockShape =
+    private static byte[] blockShape =
     {
         0,
         0,
@@ -160,7 +165,7 @@ public class VoxelChunk : IComparable
         0
     };
 
-    bool[] transparent =
+    private static bool[] transparent =
     {
         true,
         false,
@@ -171,18 +176,28 @@ public class VoxelChunk : IComparable
         true
     };
 
-    bool[] solid =
+    private static bool[] solid =
     {
         false,
         true,
         true,
         true,
         false,
-        true,
+        false,
         false
     };
-    
-    bool[] fast =
+    public static byte[] PhysicsBlock =
+    {
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0
+    };
+
+    private static bool[] fast =
     {
         true,
         false,
@@ -193,11 +208,25 @@ public class VoxelChunk : IComparable
         false
     };
 
-    int[] windingOrder =
+    private static int[] windingOrder =
     {
         0,2,1,1,2,3
     };
 
+    private static int[,] indexRotator =
+    {
+        { 0,2,1,1,2,3 },
+        { 1,0,3,3,0,2 },
+        { 3,1,2,2,1,0 },
+        { 2,0,3,3,0,1 }
+    };
+
+    public static int rotateIndex(int r, int index)
+    {
+        return indexRotator[r, index];
+    }
+
+    bool[] visible = new bool[6];
 
     ushort LoadVertex(Vector3 v, Vector3 n, Vector2 uv, int side)
     {
@@ -493,20 +522,6 @@ public class VoxelChunk : IComparable
         }
     }
 
-    int[,] indexRotator =
-    {
-        { 0,2,1,1,2,3 },
-        { 1,0,3,3,0,2 },
-        { 3,1,2,2,1,0 },
-        { 2,0,3,3,0,1 }
-    };
-
-    int rotateIndex(int r, int index)
-    {
-        return indexRotator[r,index];
-    }
-    
-    bool[] visible = new bool[6];
 
     public void LoadGraphicsUpFast()
     {
@@ -528,7 +543,7 @@ public class VoxelChunk : IComparable
         for (int i = 0; i < loadOrder.Length; i++)
         {
             Vector3Int v = loadOrder[i];
-            if (md.vertices.Count > maxVertices)
+            if (md.vertices.Count > MeshData.maxVertices)
             {
                 terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
@@ -555,14 +570,9 @@ public class VoxelChunk : IComparable
                     visible[4] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
                     t = GetType(v.x, v.y, v.z+1);
                     visible[5] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    LoadBottomFast(v.x, v.y, v.z, type);
-                    LoadLeftFast(v.x, v.y, v.z, type);
-                    LoadBackFast(v.x, v.y, v.z, type);
                 }
                 else
                 {
-                    LoadDiagonal1Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
-                    LoadDiagonal2Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
                 }
             }
         }
@@ -577,6 +587,7 @@ public class VoxelChunk : IComparable
             offset *= size;
             offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
             md.offset = offset;
+            offset = new Vector3();
         }
         else
         {
@@ -588,7 +599,7 @@ public class VoxelChunk : IComparable
         for (int i = 0; i < loadOrderReverse.Length; i++)
         {
             Vector3Int v = loadOrderReverse[i];
-            if (md.vertices.Count > maxVertices)
+            if (md.vertices.Count > MeshData.maxVertices)
             {
                 terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
@@ -618,11 +629,18 @@ public class VoxelChunk : IComparable
                     LoadTopFast(v.x, v.y, v.z, type);
                     LoadRightFast(v.x, v.y, v.z, type);
                     LoadForwardFast(v.x, v.y, v.z, type);
+
+                    LoadBottomFast(v.x, v.y, v.z, type);
+                    LoadLeftFast(v.x, v.y, v.z, type);
+                    LoadBackFast(v.x, v.y, v.z, type);
                 }
                 else
                 {
                     LoadDiagonal2Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
                     LoadDiagonal1Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+
+                    LoadDiagonal1Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                    LoadDiagonal2Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
                 }
             }
         }

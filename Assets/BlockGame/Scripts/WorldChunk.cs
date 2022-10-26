@@ -18,7 +18,6 @@ public class WorldChunk : IComparable
     bool areHeightsLoaded = false;
     bool areChunksLoaded = false;
     bool areStructuresLoaded = false;
-    bool LoadingGrapgics;
     public bool unloading;
     public WorldChunk[] chunks = new WorldChunk[3 * 3];
 
@@ -26,6 +25,7 @@ public class WorldChunk : IComparable
     public List<MeshData> meshData = new List<MeshData>();
     public int size = 0;
     public static Vector2Int pos;
+
     public WorldChunk(int size, int wcs, int index1, int index2)
     {
         this.size = wcs;
@@ -34,7 +34,9 @@ public class WorldChunk : IComparable
         this.index2 = index2;
         terrains = new TerrainChunk[size, size];
     }
+
     public static bool ReverseSort;
+
     public int CompareTo(object obj)
     {
         WorldChunk other = (WorldChunk)obj;
@@ -51,6 +53,7 @@ public class WorldChunk : IComparable
             return (m1 > m2 ? m1 : m2).CompareTo(m3 > m4 ? m3 : m4);
         }
     }
+
     public void Load(int index1, int index2)
     {
         this.index1 = index1;
@@ -127,6 +130,7 @@ public class WorldChunk : IComparable
         areHeightsLoaded = false;
         areChunksLoaded = false;
         areStructuresLoaded = false;
+        graphicsLoaded = false;
         for (int i = 0; i < worldChunkSize; i++)
         {
             for (int ii = 0; ii < worldChunkSize; ii++)
@@ -135,8 +139,6 @@ public class WorldChunk : IComparable
             }
         }
     }
-    
-
 
     public int HeightsLoaded()
     {
@@ -166,6 +168,7 @@ public class WorldChunk : IComparable
 
     public Thread thread;
     public bool done = false;
+    public bool loading;
 
     public void AddHeights()
     {
@@ -173,14 +176,14 @@ public class WorldChunk : IComparable
         {
             for (int ii = 0; ii < 3; ii++)
             {
-                if (chunks[i*3+ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii)
+                if (chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii)
                 {
-                    chunks[i*3+ii].heightsLoaded++;
+                    chunks[i * 3 + ii].heightsLoaded++;
                 }
             }
         }
     }
-    
+
     public void LoadHeights()
     {
         for (int i = 0; i < worldChunkSize; i++)
@@ -244,7 +247,6 @@ public class WorldChunk : IComparable
         return false;
     }
 
-    public bool loading;
     public void LoadStructures()
     {
         for (int i = 0; i < worldChunkSize; i++)
@@ -261,6 +263,7 @@ public class WorldChunk : IComparable
 
     public static Vector2Int[] loadOrder;
     public static Vector2Int[] loadOrderReverse;
+    public bool graphicsLoaded = false;
 
     public void LoadGraphics()
     {
@@ -268,18 +271,222 @@ public class WorldChunk : IComparable
         {
             Vector2Int v = loadOrderReverse[i];
             terrains[v.x, v.y].SortVoxelChunks();
-            terrains[v.x,v.y].LoadGraphicsDown();
+            terrains[v.x, v.y].LoadGraphicsDown();
         }
-        for (int i = 0; i < loadOrder.Length; i++)
+        /*for (int i = 0; i < loadOrder.Length; i++)
         {
             Vector2Int v = loadOrder[i];
             terrains[v.x, v.y].LoadGraphicsUp();
-        }
+        }*/
         for (int i = 0; i < meshData.Count; i++)
         {
             meshData[i].Normalize();
         }
+        graphicsLoaded = true;
         done = true;
     }
+    // cool physics
+
+    public void SimulatePlayer(Player p)
+    {
+        Vector3 pos = p.transform.position;
+        int i = Mathf.FloorToInt(pos.x) + p.wp.posIndex.x+worldChunkSize*size/2-index1* worldChunkSize * size;
+        int ii = Mathf.FloorToInt(pos.z) + p.wp.posIndex.z + worldChunkSize * size / 2 - index2 * worldChunkSize * size;
+        WorldChunk terrain = null;
+        bool should = true;
+        while (should)
+        {
+            int ier = 1;
+            int iier = 1;
+            should = false;
+            if (i < 0)
+            {
+                should = true;
+                i += worldChunkSize * size;
+                ier--;
+            }
+            if (i >= worldChunkSize * size)
+            {
+                should = true;
+                i -= worldChunkSize * size;
+                ier++;
+            }
+            if (ii < 0)
+            {
+                should = true;
+                ii += worldChunkSize * size;
+                iier--;
+            }
+            if (ii >= worldChunkSize * size)
+            {
+                should = true;
+                ii -= worldChunkSize * size;
+                iier++;
+            }
+            terrain = terrain == null ? chunks[ier * 3 + iier] : terrain.chunks[ier * 3 + iier];
+        }
+        p.chunk = terrain;
+        int oer = Mathf.FloorToInt((float)i / size);
+        int ooer = Mathf.FloorToInt((float)ii / size);
+        int iii = Mathf.FloorToInt(pos.y) + p.wp.posIndex.y - 1;
+        TerrainChunk tc = terrain.terrains[oer, ooer];
+        if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i-oer*size,ii-ooer*size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1)
+        {
+            p.OnGround = true;
+            pos += new Vector3(0, (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f)), 0);
+            p.velocity.y = 0;
+        }
+        if (VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size, iii+2)] == 1 && pos.y + p.wp.posIndex.y+0.75f > iii+2)
+        {
+            p.OnGround = true;
+            pos += new Vector3(0, (iii +2 - (pos.y + p.wp.posIndex.y +0.75f)), 0);
+            p.velocity.y = 0;
+        }
+
+        float characterWidth = 0.25f;
+        float  f = terrain.index1 * worldChunkSize * size + i + 1 - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x + characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii + 1)] == 1 | (pos.y+p.wp.posIndex.y+0.75f > iii+2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii + 2)] == 1) && f < 0)
+        {
+            if (Vector3.Dot(new Vector3(-1, 0, 0), p.velocity.normalized) < -0.75f)
+            {
+                p.run = false;
+            }
+            pos.x += f;
+        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f < -0.001f)
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index1 * worldChunkSize * size + i - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x - characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii + 2)] == 1) && f > 0)
+        {
+            if (Vector3.Dot(new Vector3(1, 0, 0), p.velocity.normalized) < -0.75f)
+            {
+                p.run = false;
+            }
+            pos.x += f;
+        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f > 0.001f)
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index2 * worldChunkSize * size + ii + 1 - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z + characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii + 2)] == 1) && f < 0)
+        {
+            if (Vector3.Dot(new Vector3(0, 0, -1), p.velocity.normalized) < -0.75f)
+            {
+                p.run = false;
+            }
+            pos.z += f;
+        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f < -0.001f)
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index2 * worldChunkSize * size + ii - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z - characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii + 2)] == 1) && f > 0)
+        {
+            if (Vector3.Dot(new Vector3(0, 0, 1), p.velocity.normalized) < -0.75f)
+            {
+                p.run = false;
+            }
+            pos.z += f;
+        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f > 0.001f)
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index1 * worldChunkSize * size + i - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x - characterWidth);
+        float ff = terrain.index2 * worldChunkSize * size + ii - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z - characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii + 2)] == 1) && (f > 0 && ff > 0))
+        {
+            if (Mathf.Abs(f) > Mathf.Abs(ff))
+            {
+                pos.z += ff;
+            }
+            else
+            {
+                pos.x += f;
+            }
+        }
+        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f > 0.001f && ff > 0.001f))
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index1 * worldChunkSize * size + i+1 - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x + characterWidth);
+        ff = terrain.index2 * worldChunkSize * size + ii - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z - characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size+1, ii - ooer * size - 1, iii + 2)] == 1) && (f < 0 && ff > 0))
+        {
+            if (Mathf.Abs(f) > Mathf.Abs(ff))
+            {
+                pos.z += ff;
+            }
+            else
+            {
+                pos.x += f;
+            }
+        }
+        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f < -0.001f && ff > 0.001f))
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index1 * worldChunkSize * size + i + 1 - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x + characterWidth);
+        ff = terrain.index2 * worldChunkSize * size + ii+1 - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z + characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii + 2)] == 1) && (f < 0 && ff < 0))
+        {
+            if (Mathf.Abs(f) > Mathf.Abs(ff))
+            {
+                pos.z += ff;
+            }
+            else
+            {
+                pos.x += f;
+            }
+        }
+        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f < -0.001f && ff < -0.001f))
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        f = terrain.index1 * worldChunkSize * size + i - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x - characterWidth);
+        ff = terrain.index2 * worldChunkSize * size + ii + 1 - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z + characterWidth);
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii + 2)] == 1) && (f > 0 && ff < 0))
+        {
+            if (Mathf.Abs(f) > Mathf.Abs(ff))
+            {
+                pos.z += ff;
+            }
+            else
+            {
+                pos.x += f;
+            }
+        }
+        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f > 0.001f && ff < -0.001f))
+        {
+            pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
+            p.velocity.y = 0;
+            p.OnGround = true;
+        }
+
+        p.transform.position = pos;
+
+    }
+
 
 }

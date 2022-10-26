@@ -5,16 +5,20 @@ public class Player : MonoBehaviour
 {
 
     public Camera cam;
-    public Rigidbody rb;
     public float jumpPower;
+    public float GravityPower;
+    public float MoveSpeed;
+    public Vector3 velocity;
     bool flying = true;
     float speed = 1;
     public WorldPosition wp;
+    public WorldPosition updateWp;
     Vector3 camLocalPosition;
     void Start()
     {
         camLocalPosition = cam.transform.localPosition;
         wp = new WorldPosition(new Vector3Int(), new Vector3());
+        updateWp = new WorldPosition(wp);
         cam.opaqueSortMode = UnityEngine.Rendering.OpaqueSortMode.FrontToBack;
         cam.transparencySortMode = TransparencySortMode.Perspective;
         Application.targetFrameRate = 60;
@@ -24,11 +28,12 @@ public class Player : MonoBehaviour
     public void SetWorldPos(Vector3 v)
     {
         previousLocalPosition = v;
-        wp.Add(v);
+        updateWp.Add(v);
     }
 
     public void UpdateWorldPos()
     {
+        wp.Set(updateWp);
         transform.position = transform.position - previousLocalPosition;
     }
     bool forward;
@@ -37,9 +42,11 @@ public class Player : MonoBehaviour
     bool backward;
     bool up;
     bool down;
+    public bool run = false;
+    float runTimer = -1;
     Vector3 rotation;
     bool paused = true;
-    int jumpTimer = 0;
+    float jumpTimer = 0;
     bool jumping;
     float zoom = 0;
 
@@ -69,13 +76,31 @@ public class Player : MonoBehaviour
         {
             flying = flying ? false : true;
         }
+        if (runTimer >= 0)
+        {
+            runTimer += Time.deltaTime;
+            if (runTimer >= 0.25f)
+            {
+                runTimer = -1;
+            }
+        }
         if (Input.GetKeyDown(KeyCode.W))
         {
             forward = true;
+            if (runTimer >= 0 && runTimer < 0.25f)
+            {
+                runTimer = -1;
+                run = true;
+            }
         }
         if (Input.GetKeyUp(KeyCode.W))
         {
             forward = false;
+            run = false;
+            if (runTimer < 0)
+            {
+                runTimer = 0;
+            }
         }
         if (Input.GetKeyDown(KeyCode.A))
         {
@@ -101,7 +126,7 @@ public class Player : MonoBehaviour
         {
             right = false;
         }
-        if (!jumping && Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.Space))
         {
             up = true;
         }
@@ -125,11 +150,130 @@ public class Player : MonoBehaviour
         zoom = zoom < 0 ? 0 : zoom;
         cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom;
         UpdateSpeed();
-    }
 
+        //Physics simulation for player now done on the render thread
+
+        a = Mathf.CeilToInt(Time.deltaTime / (1.0f / 60.0f));
+        a *= Mathf.FloorToInt(velocity.magnitude+1)*8;
+        for (int i = 0; i < a; i++)
+        {
+            if (flying)
+            {
+                Fly();
+            }
+            else
+            {
+                Walk();
+            }
+            if (!OnGround)
+            {
+                velocity += new Vector3(0, -GravityPower * Time.deltaTime/a, 0);
+            }
+            transform.position += velocity * Time.deltaTime/a;
+            OnGround = false;
+            currentImpulse = new Vector3();
+            collisionCount = 0;
+            chunk.SimulatePlayer(this);
+        }
+    }
+    int a;
+
+    public bool OnGround;
+    Vector3 currentImpulse = new Vector3();
+    int collisionCount = 0;
     float speedAdjustTimer = 0;
     bool adjustingSpeed = false;
     float speedDelta = 0;
+    float jumpStrength;
+    float jumpTime = 0;
+    float jumpSteps = 0.5f;
+
+    public WorldChunk chunk;
+
+    void Fly()
+    {
+        Quaternion q = Quaternion.Euler(-rotation.y, rotation.x, 0);
+        Vector3 move = new Vector3();
+        if (forward)
+        {
+            move += new Vector3(0, 0, 1);
+        }
+        if (backward)
+        {
+            move += new Vector3(0, 0, -1);
+        }
+        if (left)
+        {
+            move += new Vector3(-1, 0, 0);
+        }
+        if (right)
+        {
+            move += new Vector3(1, 0, 0);
+        }
+        move = q*move.normalized;
+        move *= 1+(speed * speed*0.5f);
+        move *= MoveSpeed;
+        float timer = Time.deltaTime * 60 / a;
+        timer = timer > 1 ? 1 : timer;
+        velocity += (move - velocity) * timer;
+    }
+
+    void Walk()
+    {
+        Quaternion q = Quaternion.Euler(0, rotation.x, 0);
+        Vector3 move = new Vector3();
+        if (forward)
+        {
+            move += new Vector3(0, 0, 1);
+        }
+        if (backward)
+        {
+            move += new Vector3(0, 0, -1);
+        }
+        if (left)
+        {
+            move += new Vector3(-1, 0, 0);
+        }
+        if (right)
+        {
+            move += new Vector3(1, 0, 0);
+        }
+        move = move.normalized;
+        move *= 1 + (speed * speed * 0.25f);
+        float timer = Time.deltaTime * 60 / a;
+        timer = timer > 1 ? 1 : timer;
+        if (OnGround)
+        {
+            Vector3 vel = velocity;
+            Vector3 newVel = q * move*MoveSpeed*(run?2.5f:1);
+            newVel.y = 0;
+            velocity.x += (newVel.x - velocity.x) * timer;
+            velocity.z += (newVel.z - velocity.z) * timer;
+            if (jumping)
+            {
+                jumpTimer += Time.deltaTime / a;
+                if (jumpTimer > 0.1)
+                {
+                    jumping = false;
+                    jumpTimer = 0;
+                }
+            }
+            if (up && !jumping)
+            {
+                velocity.y = jumpPower;
+                OnGround = false;
+                jumping = true;
+            }
+        }else
+        {
+            Vector3 vel = velocity;
+            Vector3 newVel = q * move * MoveSpeed * (run ? 2.5f : 1);
+            newVel.y = vel.y;
+            velocity.x += (newVel.x - velocity.x) * timer/8;
+            velocity.z += (newVel.z - velocity.z) * timer/8;
+        }
+    }
+
     void UpdateSpeed()
     {
         if (Input.GetKeyDown(KeyCode.UpArrow))
@@ -167,120 +311,10 @@ public class Player : MonoBehaviour
             }
         }
     }
-
-    void Fly()
-    {
-        Quaternion q = Quaternion.Euler(-rotation.y, rotation.x, 0);
-        Vector3 move = new Vector3();
-        if (forward)
-        {
-            move += new Vector3(0, 0, 1);
-        }
-        if (backward)
-        {
-            move += new Vector3(0, 0, -1);
-        }
-        if (left)
-        {
-            move += new Vector3(-1, 0, 0);
-        }
-        if (right)
-        {
-            move += new Vector3(1, 0, 0);
-        }
-        move = q*move.normalized;
-        move *= 1+(speed * speed*0.5f);
-        rb.velocity = Vector3.Lerp(rb.velocity,move,0.25f);
-        rb.drag = 3;
-    }
-
-    void Walk()
-    {
-        rb.drag = 0.001f;
-        Quaternion q = Quaternion.Euler(0, rotation.x, 0);
-        Vector3 move = new Vector3();
-        if (forward)
-        {
-            move += new Vector3(0, 0, 1);
-        }
-        if (backward)
-        {
-            move += new Vector3(0, 0, -1);
-        }
-        if (left)
-        {
-            move += new Vector3(-1, 0, 0);
-        }
-        if (right)
-        {
-            move += new Vector3(1, 0, 0);
-        }
-        move = move.normalized;
-        move *= 1 + (speed * speed * 0.25f);
-        if (!jumping && OnGround)
-        {
-            Vector3 vel = rb.velocity;
-            Vector3 newVel = Vector3.Lerp(vel, q * move, 0.5f);
-            newVel.y = 0;
-            float d = Vector3.Dot(new Vector3(newVel.x, newVel.z).normalized, new Vector3(currentImpulse.x, currentImpulse.z).normalized);
-            d = (1.0f + d) / 2.0f * 0.5f + 0.5f;
-            // d -= 0.5f;
-            // d = d < 0 ? 0 : d * 2;
-            newVel.x *= d;
-            newVel.z *= d;
-            rb.velocity = newVel;
-            if (up)
-            {
-                jumping = true;
-                jumpTimer = 0;
-                jumpStrength = 0;
-            }
-        }else
-        {
-            Vector3 vel = rb.velocity;
-            Vector3 newVel = Vector3.Lerp(vel, q * move, 0.5f);
-            newVel.y = vel.y;
-            float d = Vector3.Dot(new Vector3(newVel.x,newVel.z).normalized, new Vector3(currentImpulse.x,currentImpulse.z).normalized);
-            d = (1.0f + d) / 2.0f*0.5f+0.5f;
-            // d -= 0.5f;
-            // d = d < 0 ? 0 : d * 2;
-            newVel.x *= d;
-            newVel.z *= d;
-            rb.velocity = newVel;
-        }
-        if (jumping)
-        {
-            jumpStrength = Mathf.Lerp(jumpStrength, jumpPower, 0.75f);
-            Vector3 newVel = rb.velocity+new Vector3(0, jumpStrength, 0);
-            rb.velocity = newVel;
-            jumpTime++;
-            if (jumpTime == jumpSteps)
-            {
-                jumpTime = 0;
-                jumping = false;
-            }
-        }
-    }
-    float jumpStrength;
-    int jumpTime = 0;
-    int jumpSteps = 16;
     private void FixedUpdate()
     {
-        if (flying)
-        {
-            Fly();
-        }else
-        {
-            Walk();
-        }
-        OnGround = false;
-        currentImpulse = new Vector3();
-        collisionCount = 0;
     }
 
-    bool OnGround;
-    Vector3 currentImpulse = new Vector3();
-    int collisionCount = 0;
 
     private void OnCollisionEnter(Collision collision)
     {

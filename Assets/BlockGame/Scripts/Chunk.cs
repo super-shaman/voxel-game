@@ -9,7 +9,7 @@ public class Chunk : MonoBehaviour
     public WorldChunk chunk;
     public LODGroup lodGroup;
     Mesh colliderMesh;
-    bool physics = true;
+    bool physics = false;
     public WorldPosition wp;
     public static float LODSize;
 
@@ -86,16 +86,50 @@ public class Chunk : MonoBehaviour
         offset = md.offset;
         wp = new WorldPosition(new Vector3Int(chunk.index1 * size, 0, chunk.index2 * size),new Vector3());
         chunk.graphics.Add(this);
+        lodGroup.RecalculateBounds();
         lodGroup.size = LODSize;
-        lodGroup.localReferencePoint = new Vector3();
+        mf.mesh.RecalculateBounds();
         this.chunk = chunk;
         loaded = true;
     }
 
-    public void EnableGrass()
+    public void EnablePhysics()
     {
-
+        if (colliderMesh == null)
+        {
+            colliderMesh = new Mesh();
+            colliderMesh.SetVertices(mf.mesh.vertices);
+            colliderMesh.subMeshCount = physicsCount;
+            int counter = 0;
+            for (int i = 0; i < mf.mesh.subMeshCount; i++)
+            {
+                if (loadPhysics[i])
+                {
+                    colliderMesh.SetIndices(mf.mesh.GetIndices(i), MeshTopology.Triangles, counter);
+                    counter++;
+                }
+            }
+            mc.sharedMesh = colliderMesh;
+            colliderMesh.Clear();
+        }
+        else
+        {
+            colliderMesh.SetVertices(mf.mesh.vertices);
+            colliderMesh.subMeshCount = physicsCount;
+            int counter = 0;
+            for (int i = 0; i < mf.mesh.subMeshCount; i++)
+            {
+                if (loadPhysics[i])
+                {
+                    colliderMesh.SetIndices(mf.mesh.GetIndices(i), MeshTopology.Triangles, counter);
+                    counter++;
+                }
+            }
+            mc.sharedMesh = colliderMesh;
+            colliderMesh.Clear();
+        }
     }
+    
 
     public void SetDrawDistance()
     {

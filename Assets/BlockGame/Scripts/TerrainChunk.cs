@@ -43,6 +43,7 @@ public class TerrainChunk
         loadedChunks.Clear();
     }
 
+
     float minH;
     float maxH;
 
@@ -58,14 +59,6 @@ public class TerrainChunk
                 minH = height < minH ? height : minH;
                 maxH = height > maxH ? height : maxH;
                 heights[i * size + ii] = height;
-                /*if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
-                {
-                    SpawnTree(i, ii, Mathf.FloorToInt(height));
-                }
-                else if (height > 1)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
-                {
-                    SpawnGrass(i, ii, Mathf.FloorToInt(height));
-                }*/
             }
         }
         maxH = maxH < 0 ? 0 : maxH;
@@ -171,6 +164,11 @@ public class TerrainChunk
         }
     }
 
+    public VoxelChunk getVoxelChunk(int iii)
+    {
+        return voxelChunks[iii + chunkDepth];
+    }
+
     VoxelChunk LoadChunk(int iii)
     {
         if (voxelChunks[chunkDepth+iii] != null)
@@ -202,50 +200,111 @@ public class TerrainChunk
 
     void SetBlock(int i, int ii, int iii, int type)
     {
+        int ier = Mathf.FloorToInt((float)i / size);
+        int iier = Mathf.FloorToInt((float)ii / size);
         int iiier = Mathf.FloorToInt((float)iii / size);
-        int ier = 1;
-        int iier = 1;
-        if (i < 0)
+        i -= ier * size;
+        ii -= iier * size;
+        iii -= iiier * size;
+        TerrainChunk terrain = this;
+        while (ier != 0 | iier != 0)
         {
-            i += size;
-            ier--;
+            int oer = (ier > 0 ? 2 : ier < 0 ? 0 : 1);
+            int ooer = (iier > 0 ? 2 : iier < 0 ? 0 : 1);
+            terrain = terrain.chunks[oer * 3 + ooer];
+            ier -= oer - 1;
+            iier -= ooer - 1;
         }
-        if (i >= size)
-        {
-            i -= size;
-            ier++;
-        }
-        if (ii < 0)
-        {
-            ii += size;
-            iier--;
-        }
-        if (ii >= size)
-        {
-            ii -= size;
-            iier++;
-        }
-        TerrainChunk terrain = chunks[ier * 3 + iier];
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            terrain.chunks[3].LoadChunk(iiier);
-            terrain.chunks[5].LoadChunk(iiier);
-            terrain.chunks[7].LoadChunk(iiier);
-            terrain.chunks[1].LoadChunk(iiier);
-            terrain.LoadChunk(iiier + 1);
-            terrain.LoadChunk(iiier - 1);
-            chunk.SetType(i, ii, iii - iiier * size, type);
+            if (ii == 0)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii == size - 1)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i == size - 1)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i == 0)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii == size - 1)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii == 0)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+
+            chunk.SetType(i, ii, iii, type);
         }else
         {
             chunk = terrain.LoadChunk(iiier);
-            terrain.chunks[3].LoadChunk(iiier);
-            terrain.chunks[5].LoadChunk(iiier);
-            terrain.chunks[7].LoadChunk(iiier);
-            terrain.chunks[1].LoadChunk(iiier);
-            terrain.LoadChunk(iiier + 1);
-            terrain.LoadChunk(iiier - 1);
-            chunk.SetType(i, ii, iii - iiier * size, type);
+            if (ii == 0)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii == size - 1)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i == size - 1)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i == 0)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii == size - 1)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii == 0)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+            chunk.SetType(i, ii, iii, type);
+        }
+    }
+
+    public int GetBlock(int i, int ii, int iii)
+    {
+        int iiier = Mathf.FloorToInt((float)iii / size);
+        if (iiier < -chunkDepth || iiier >= chunkHeight)
+        {
+            return 0;
+        }
+        int ier = Mathf.FloorToInt((float)i / size);
+        int iier = Mathf.FloorToInt((float)ii / size);
+
+        i -= ier * size;
+        ii -= iier * size;
+        iii -= iiier * size;
+        TerrainChunk terrain = this;
+        while (ier != 0 | iier != 0)
+        {
+            int oer = (ier > 0 ? 2 : ier < 0 ? 0 : 1);
+            int ooer = (iier > 0 ? 2 : iier < 0 ? 0 : 1);
+            terrain = terrain.chunks[oer * 3 + ooer];
+            ier -= oer - 1;
+            iier -= ooer - 1;
+        }
+        VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
+        if (chunk != null)
+        {
+            return chunk.GetTypeFast(i, ii, iii);
+        }
+        else
+        {
+            return 0;
         }
     }
 
@@ -292,11 +351,65 @@ public class TerrainChunk
             SetBlock(i, ii, h + o, 3);
         }
     }
+    
+    float TreeNoise(int i, int ii, int ooo, int seed, int amount)
+    {
+        double h = 0;
+        double a = 1;
+        double max = 0;
+        for (int o = 0; o < amount; o++)
+        {
+            h += WorldNoise.ValueCoherentNoise3D((index1 * size + i)/a, (index2 * size + ii)/a, (ooo)/a, seed*8 + i)*a;
+            max += a;
+            a *= 2;
+        }
+        return (float)(h / max);
+    }
+    void SpawnBigTree(int i, int ii, int h, int maxs, int maxh, int seed)
+    {
+        float rscale = (float)(WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 3)/2.0+0.5);
+        int sizer = (int)(maxs);
+        int height = (int)(rscale*maxh+maxh);
+        Vector2 poser = new Vector2(0, 0);
+        for (int ooo = 0; ooo < height; ooo++)
+        {
+            float s = Mathf.Lerp(sizer,0,(float)ooo / height);
+            poser.x += s * TreeNoise(i,ii,ooo,0+seed*2,4)*Mathf.Clamp01(32.0f/height);
+            poser.y += s * TreeNoise(i, ii, ooo, 1 + seed * 2,4) * Mathf.Clamp01(32.0f / height);
+            for (int o = 0; o < (4.0f / 3.0f * Mathf.PI * s * s * s > sphere.Length ? sphere.Length : 4.0f / 3.0f * Mathf.PI * s * s * s); o++)
+            {
+                Vector3Int v = sphere[o];
+                SetBlock(i + v.x + (int)poser.x, ii + v.y + (int)poser.y, h + ooo + v.z, 3);
+            }
+            if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 5) / 2.0 + 0.5)*8 < 1)
+            {
+                int leaveSize = (int)(16 * ((float)ooo / height)* (WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 8) / 2.0 + 0.5));
+                int leaveIndex = (int)(4.0f / 3.0f * Mathf.PI * (leaveSize * leaveSize * leaveSize));
+                Vector2Int Offset = new Vector2Int(i + (int)poser.x+(int)(WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 6) * leaveSize), ii + (int)poser.y+(int)(WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 7)* leaveSize));
+
+                for (int o = 0; o < (leaveIndex > sphere.Length ? sphere.Length : leaveIndex); o++)
+                {
+                    Vector3Int v = sphere[o];
+                    Vector2Int ver = new Vector2Int(v.x + Offset.x, v.y + Offset.y);
+                    SetBlock(ver.x, ver.y, h + ooo + v.z, 4);
+                }
+            }
+            if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i+(int)poser.x, index2 * size + ii+(int)poser.y, ooo, 4) / 2.0 + 0.5)*32 < 1)
+            {
+                if ((int)(s / 2.0f) != 0 && (int)((height - ooo) / 2.0f) != 0)
+                {
+                    SpawnBigTree(i + (int)poser.x, ii + (int)poser.y, h + ooo, (int)(s / 2.0f), (int)((height - ooo) / 2.0f), seed + 1);
+                }
+            }
+        }
+    }
     void SpawnGrass(int i, int ii, int h)
     {
 
         SetBlock(i, ii, h + 1, 5);
     }
+
+    public static Vector3Int[] sphere;
 
     public void LoadStructures()
     {
@@ -308,7 +421,12 @@ public class TerrainChunk
                 if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
                 {
                     SpawnTree(i, ii, Mathf.FloorToInt(height));
-                } else if (height > 1)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
+                }else if (height > 2 && height < 256 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 1) + 1) * 512+ (WorldNoise.ValueCoherentNoise3D((index1 * size + i)/1000.0, (index2 * size + ii)/1000.0, 1, 1)*0.5f+0.5f) < 1)
+                {
+                    float s = (float)(WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 3) / 2.0 + 0.5);
+                    SpawnBigTree(i, ii, Mathf.FloorToInt(height), (int)(s*4.0f)+2, (int)(s*96)+16, 0);
+                }
+                else if (height > 1)// && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 1, 0) + 1) * 3 < 1)
                 {
                     SpawnGrass(i,ii, Mathf.FloorToInt(height));
                 }

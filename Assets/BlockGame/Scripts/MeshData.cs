@@ -7,24 +7,24 @@ public class MeshData
 
     public MeshData()
     {
-        indices.Add(new List<ushort>(65000*3));
-        indices.Add(new List<ushort>(65000 * 3));
-        indices.Add(new List<ushort>(65000 * 3));
-        indices.Add(new List<ushort>(65000 * 3));
-        indices.Add(new List<ushort>(65000 * 3));
-        indices.Add(new List<ushort>(65000 * 3));
-        indices.Add(new List<ushort>(65000 * 3));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(65000));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
     }
     public void Normalize()
     {
@@ -34,7 +34,7 @@ public class MeshData
         }
     }
     public int lod = 0;
-
+    public static int maxVertices = 65000;
     public void Unload()
     {
         lod = 0;
@@ -56,9 +56,9 @@ public class MeshData
         offset = new Vector3();
     }
 
-    public List<Vector3> vertices = new List<Vector3>(65000);
-    public List<Vector3> normals = new List<Vector3>(65000);
-    public List<Vector2> uvs = new List<Vector2>(65000);
+    public List<Vector3> vertices = new List<Vector3>(maxVertices);
+    public List<Vector3> normals = new List<Vector3>(maxVertices);
+    public List<Vector2> uvs = new List<Vector2>(maxVertices);
     public List<List<ushort>> indices = new List<List<ushort>>();
     public List<Dictionary<Vector3, ushort>> vertDictionary = new List<Dictionary<Vector3, ushort>>();
     public Vector3 offset = new Vector3();
