@@ -154,7 +154,7 @@ public class Player : MonoBehaviour
         //Physics simulation for player now done on the render thread
 
         a = Mathf.CeilToInt(Time.deltaTime / (1.0f / 60.0f));
-        a *= Mathf.FloorToInt(velocity.magnitude+1)*8;
+        a *= Mathf.FloorToInt((velocity.magnitude > 1000 ? 1000 : velocity.magnitude)+1)*8;
         for (int i = 0; i < a; i++)
         {
             if (flying)

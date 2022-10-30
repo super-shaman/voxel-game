@@ -144,7 +144,7 @@ public class World : MonoBehaviour
         }
     }
 
-    //LoadOrder for overdraw reduction
+    //LoadOrder
 
     void LoadLoadOrder()
     {
@@ -772,7 +772,6 @@ public class World : MonoBehaviour
         {
             Chunk chunk = chunkPool[chunkPool.Count - 1];
             chunkPool.RemoveAt(chunkPool.Count - 1);
-            chunk.Reload();
             return chunk;
         }else
         {
@@ -883,6 +882,7 @@ public class World : MonoBehaviour
                 c.load(worldChunkSizer, wc, 0);
                 c.PositionChunk(player.wp);
                 c.SetPosition();
+                c.Reload();
                 unloadMeshData.Add(wc.meshData[0]);
                 wc.meshData.RemoveAt(0);
                 if (wc.meshData.Count == 0)

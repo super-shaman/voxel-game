@@ -20,6 +20,7 @@ public class VoxelChunk : IComparable
     MeshData md;
     int memindex = 0;
     static int memIndexer = 0;
+
     public int CompareTo(object obj)
     {
         VoxelChunk other = (VoxelChunk)obj;

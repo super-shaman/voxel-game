@@ -326,6 +326,10 @@ public class WorldChunk : IComparable
             terrain = terrain == null ? chunks[ier * 3 + iier] : terrain.chunks[ier * 3 + iier];
         }
         p.chunk = terrain;
+        if (!terrain.graphicsLoaded)
+        {
+            return;
+        }
         int oer = Mathf.FloorToInt((float)i / size);
         int ooer = Mathf.FloorToInt((float)ii / size);
         int iii = Mathf.FloorToInt(pos.y) + p.wp.posIndex.y - 1;
