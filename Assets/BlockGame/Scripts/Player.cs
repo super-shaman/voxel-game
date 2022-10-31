@@ -79,7 +79,7 @@ public class Player : MonoBehaviour
         if (runTimer >= 0)
         {
             runTimer += Time.deltaTime;
-            if (runTimer >= 0.25f)
+            if (runTimer >= 0.125f)
             {
                 runTimer = -1;
             }
@@ -87,7 +87,7 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.W))
         {
             forward = true;
-            if (runTimer >= 0 && runTimer < 0.25f)
+            if (runTimer >= 0 && runTimer < 0.125f)
             {
                 runTimer = -1;
                 run = true;
@@ -213,7 +213,7 @@ public class Player : MonoBehaviour
         move = q*move.normalized;
         move *= 1+(speed * speed*0.5f);
         move *= MoveSpeed;
-        float timer = Time.deltaTime * 60 / a;
+        float timer = Time.deltaTime*10 / a;
         timer = timer > 1 ? 1 : timer;
         velocity += (move - velocity) * timer;
     }
@@ -240,7 +240,7 @@ public class Player : MonoBehaviour
         }
         move = move.normalized;
         move *= 1 + (speed * speed * 0.25f);
-        float timer = Time.deltaTime * 60 / a;
+        float timer = Time.deltaTime * 30 / a;
         timer = timer > 1 ? 1 : timer;
         if (OnGround)
         {

@@ -19,7 +19,6 @@ public class VoxelChunk : IComparable
     public static Vector3Int[] loadOrderReverse;
     MeshData md;
     int memindex = 0;
-    static int memIndexer = 0;
 
     public int CompareTo(object obj)
     {
@@ -32,12 +31,11 @@ public class VoxelChunk : IComparable
         return memindex;
     }
 
-    public VoxelChunk(int size)
+    public VoxelChunk(int size, int memIndex)
     {
         this.size = size;
         types = new byte[size * size * size];
-        memindex = memIndexer;
-        memIndexer++;
+        memindex = memIndex;
     }
 
     public void Load(int index1, int index2, int index3, TerrainChunk terrain)
@@ -236,7 +234,7 @@ public class VoxelChunk : IComparable
         bool pass = md.vertDictionary[side].TryGetValue(v, out index1);
         if (pass)
         {
-            if (Vector3.Dot(md.normals[index1].normalized, n) > -0.001f)
+            if (Vector3.Dot(md.normals[index1].normalized, n) > -0.999f)
             {
                 md.normals[index1] += n;
             }else
@@ -267,7 +265,7 @@ public class VoxelChunk : IComparable
             pass = md.vertDictionary[side].TryGetValue(v, out index2);
             if (pass)
             {
-                if (Vector3.Dot(md.normals[index2].normalized, n) > -0.001f)
+                if (Vector3.Dot(md.normals[index2].normalized, n) > -0.999f)
                 {
                     md.normals[index2] += n;
                     index1 = index2;
@@ -302,10 +300,10 @@ public class VoxelChunk : IComparable
             md.vertices.Add(new Vector3(i + 1, iii + 1, ii) + offset+off);
             md.vertices.Add(new Vector3(i, iii + 1, ii + 1) + offset+off);
             Vector3 n = new Vector3(1, 0, 1).normalized;
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
+            md.normals.Add(new Vector3(1, 0, -1).normalized);
+            md.normals.Add(new Vector3(-1, 0, 1).normalized);
+            md.normals.Add(new Vector3(1, 1, -1).normalized);
+            md.normals.Add(new Vector3(-1, 1, 1).normalized);
             md.uvs.Add(new Vector2(0, 0));
             md.uvs.Add(new Vector2(1, 0));
             md.uvs.Add(new Vector2(0, 1));
@@ -354,10 +352,10 @@ public class VoxelChunk : IComparable
             md.vertices.Add(new Vector3(i + 1, iii + 1, ii + 1) + offset + off);
             md.vertices.Add(new Vector3(i, iii + 1, ii) + offset + off);
             Vector3 n = new Vector3(-1, 0, 1).normalized;
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
+            md.normals.Add(new Vector3(1,0,1).normalized);
+            md.normals.Add(new Vector3(-1, 0, -1).normalized);
+            md.normals.Add(new Vector3(1, 1, 1).normalized);
+            md.normals.Add(new Vector3(-1, 1, -1).normalized);
             md.uvs.Add(new Vector2(0, 0));
             md.uvs.Add(new Vector2(1, 0));
             md.uvs.Add(new Vector2(0, 1));
@@ -404,10 +402,10 @@ public class VoxelChunk : IComparable
             Vector3 n = new Vector3(0, 1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[2] ? -1 : 0),uv+new Vector2(0,0),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[2] ? -1 : 0), uv+new Vector2(1,0),0),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[3] ? 1 : 0),uv+new Vector2(0,1),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[3] ? 1 : 0),uv+new Vector2(1,1),0)
+                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),0),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[2] ? -1 : 0).normalized, uv+new Vector2(1,0),0),
+                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),0),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),0)
             };
             md.indices[side[type, 0]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 0]].Add(indexes[windingOrder[1]]);
@@ -425,10 +423,10 @@ public class VoxelChunk : IComparable
             Vector3 n = new Vector3(0, -1, 0);
             Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[2] ? -1 : 0),uv+new Vector2(0,0),1),
-                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[2] ? -1 : 0), uv+new Vector2(-1,0),1),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[3] ? 1 : 0),uv+new Vector2(0,1),1),
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[3] ? 1 : 0),uv+new Vector2(-1,1),1)
+                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),1),
+                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[2] ? -1 : 0).normalized, uv+new Vector2(-1,0),1),
+                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),1),
+                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(-1,1),1)
             };
             md.indices[side[type, 1]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 1]].Add(indexes[windingOrder[1]]);
@@ -446,10 +444,10 @@ public class VoxelChunk : IComparable
             Vector3 n = new Vector3(1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[2] ? -1 : 0),uv+new Vector2(0,0),2),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[3] ? 1 : 0), uv+new Vector2(1,0),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[2] ? -1 : 0),uv+new Vector2(0,1),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[3] ? 1 : 0),uv+new Vector2(1,1),2)
+                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),2),
+                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized, uv+new Vector2(1,0),2),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,1),2),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),2)
             };
             md.indices[side[type, 2]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 2]].Add(indexes[windingOrder[1]]);
@@ -467,10 +465,10 @@ public class VoxelChunk : IComparable
             Vector3 n = new Vector3(-1, 0, 0);
             Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[3] ? 1 : 0),uv+new Vector2(0,0),3),
-                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[2] ? -1 : 0), uv+new Vector2(-1,0),3),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[3] ? 1 : 0),uv+new Vector2(0,1),3),
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[2] ? -1 : 0),uv+new Vector2(-1,1),3)
+                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,0),3),
+                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized, uv+new Vector2(-1,0),3),
+                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),3),
+                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(-1,1),3)
             };
             md.indices[side[type, 3]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 3]].Add(indexes[windingOrder[1]]);
@@ -488,10 +486,10 @@ public class VoxelChunk : IComparable
             Vector3 n = new Vector3(0, 0, 1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, 1),uv+new Vector2(0,0),4),
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, 1), uv+new Vector2(-1,0),4),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, 1),uv+new Vector2(0,1),4),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, 1),uv+new Vector2(-1,1),4)
+                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, 1).normalized,uv+new Vector2(0,0),4),
+                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, 1).normalized, uv+new Vector2(-1,0),4),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(0,1),4),
+                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(-1,1),4)
             };
             md.indices[side[type, 4]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 4]].Add(indexes[windingOrder[1]]);
@@ -509,10 +507,10 @@ public class VoxelChunk : IComparable
             Vector3 n = new Vector3(0, 0, -1);
             Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, -1),uv+new Vector2(0,0),5),
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, -1), uv+new Vector2(1,0),5),
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, -1),uv+new Vector2(0,1),5),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, -1),uv+new Vector2(1,1),5)
+                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, -1).normalized,uv+new Vector2(0,0),5),
+                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, -1).normalized, uv+new Vector2(1,0),5),
+                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(0,1),5),
+                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(1,1),5)
             };
             md.indices[side[type, 5]].Add(indexes[windingOrder[0]]);
             md.indices[side[type, 5]].Add(indexes[windingOrder[1]]);
@@ -640,8 +638,8 @@ public class VoxelChunk : IComparable
                     LoadDiagonal2Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
                     LoadDiagonal1Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
 
-                    LoadDiagonal1Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
-                    LoadDiagonal2Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                    //LoadDiagonal1Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                    //LoadDiagonal2Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
                 }
             }
         }

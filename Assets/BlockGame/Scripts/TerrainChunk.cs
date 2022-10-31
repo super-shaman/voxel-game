@@ -374,18 +374,18 @@ public class TerrainChunk
         for (int ooo = 0; ooo < height; ooo++)
         {
             float s = Mathf.Lerp(sizer,0,(float)ooo / height);
-            poser.x += s * TreeNoise(i,ii,ooo,0+seed*2,4)*Mathf.Clamp01(32.0f/height);
-            poser.y += s * TreeNoise(i, ii, ooo, 1 + seed * 2,4) * Mathf.Clamp01(32.0f / height);
+            poser.x += s * TreeNoise(i,ii,ooo,0+seed*2,4)*Mathf.Clamp01(46.0f/height);
+            poser.y += s * TreeNoise(i, ii, ooo, 1 + seed * 2,4) * Mathf.Clamp01(46.0f / height);
             for (int o = 0; o < (4.0f / 3.0f * Mathf.PI * s * s * s > sphere.Length ? sphere.Length : 4.0f / 3.0f * Mathf.PI * s * s * s); o++)
             {
                 Vector3Int v = sphere[o];
                 SetBlock(i + v.x + (int)poser.x, ii + v.y + (int)poser.y, h + ooo + v.z, 3);
             }
-            if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 5) / 2.0 + 0.5)*8 < 1)
+            if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 5) / 2.0 + 0.5)*4*(2.0f-(float)ooo/height) < 1)
             {
-                int leaveSize = (int)(16 * ((float)ooo / height)* (WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 8) / 2.0 + 0.5));
+                int leaveSize = (int)(8 * ((float)(ooo > height/2 ? height-(ooo-height/2) : ooo*2) / height)* (WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 8) / 2.0 + 0.5));
                 int leaveIndex = (int)(4.0f / 3.0f * Mathf.PI * (leaveSize * leaveSize * leaveSize));
-                Vector2Int Offset = new Vector2Int(i + (int)poser.x+(int)(WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 6) * leaveSize), ii + (int)poser.y+(int)(WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 7)* leaveSize));
+                Vector2Int Offset = new Vector2Int(i + (int)poser.x+(int)(WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 6) * leaveSize/2), ii + (int)poser.y+(int)(WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 7)* leaveSize/2));
 
                 for (int o = 0; o < (leaveIndex > sphere.Length ? sphere.Length : leaveIndex); o++)
                 {
@@ -394,7 +394,7 @@ public class TerrainChunk
                     SetBlock(ver.x, ver.y, h + ooo + v.z, 4);
                 }
             }
-            if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i+(int)poser.x, index2 * size + ii+(int)poser.y, ooo, 4) / 2.0 + 0.5)*32 < 1)
+            if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i+(int)poser.x, index2 * size + ii+(int)poser.y, ooo, 4) / 2.0 + 0.5)*8 < 1)
             {
                 if ((int)(s / 2.0f) != 0 && (int)((height - ooo) / 2.0f) != 0)
                 {

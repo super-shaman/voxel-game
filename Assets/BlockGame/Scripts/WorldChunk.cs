@@ -98,7 +98,7 @@ public class WorldChunk : IComparable
         terrain.Load(index1 * worldChunkSize + i, index2 * worldChunkSize + ii);
         terrain.worldChunk = this;
     }
-
+    public bool StructuresFinished;
     public void Unload()
     {
         unloading = true;
@@ -119,7 +119,27 @@ public class WorldChunk : IComparable
                     }
                     if (areStructuresLoaded)
                     {
-                        chunk.structuresLoaded -= chunk.structuresLoaded <= 0 ? 0 : 1;
+                        if (!(i == 1 && ii == 1) && chunk.areStructuresLoaded)
+                        {
+                            chunk.structuresLoaded -= chunk.structuresLoaded <= 0 ? 0 : 1;
+                            for (int iii = 0; iii < 3; iii++)
+                            {
+                                for (int iiii = 0; iiii < 3; iiii++)
+                                {
+                                    WorldChunk wc = chunk.chunks[iii * 3 + iiii];
+                                    wc.structuresLoaded -= !((wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)) ? 0 : wc.structuresLoaded <= 0 ? 0 : 1;
+                                }
+                            }
+                            chunk.areStructuresLoaded = false;
+                            if (StructuresFinished)
+                            {
+                                World.world.ReloadStructures(chunk);
+                            }
+                        }else
+                        {
+
+                            chunk.structuresLoaded -= chunk.structuresLoaded <= 0 ? 0 : 1;
+                        }
                     }
                 }
             }
@@ -138,6 +158,7 @@ public class WorldChunk : IComparable
                 terrains[i, ii].Unload();
             }
         }
+        StructuresFinished = true;
     }
 
     public int HeightsLoaded()

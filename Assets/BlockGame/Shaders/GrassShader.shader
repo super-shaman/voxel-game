@@ -9,7 +9,9 @@ Shader "Custom/GrassShader"
     }
     SubShader
     {
+
 	Tags { "Queue" = "AlphaTest" "RenderType" = "TransparentCutout" }
+		Cull Off
         LOD 200
 
         CGPROGRAM
