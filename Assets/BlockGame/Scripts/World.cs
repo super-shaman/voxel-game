@@ -522,7 +522,7 @@ public class World : MonoBehaviour
             {
                 break;
             }
-            if ((new Vector2Int(wc.index1, wc.index2) - chunkIndex).magnitude >= worldChunkLoadSize / 2)
+            if (!wc.CanLoadHeights() | (new Vector2Int(wc.index1, wc.index2) - chunkIndex).magnitude >= worldChunkLoadSize / 2)
             {
                 continue;
             }
@@ -591,7 +591,7 @@ public class World : MonoBehaviour
             {
                 continue;
             }
-            if (wc.HeightsLoaded() != 9 | !(wc.index1 - chunkIndex.x >= -worldChunkLoadSize / 2 + 1 && wc.index1 - chunkIndex.x < worldChunkLoadSize / 2 - 1 && wc.index2 - chunkIndex.y >= -worldChunkLoadSize / 2 + 1 && wc.index2 - chunkIndex.y < worldChunkLoadSize / 2 - 1))
+            if (!wc.CanLoadHeights() | wc.HeightsLoaded() != 9)
             {
                 continue;
             }
@@ -651,10 +651,10 @@ public class World : MonoBehaviour
                 chunksToLoad.RemoveAt(i);
             }
         }
-        structuresToLoad.Sort();
         threader++;
         if (!AddGraphics)
         {
+            reloadStructures.Sort();
             for (int i = reloadStructures.Count - 1; i >= 0; i--)
             {
                 WorldChunk wc = reloadStructures[i];
@@ -662,7 +662,7 @@ public class World : MonoBehaviour
                 {
                     continue;
                 }
-                if (wc.ChunksLoaded() != 9 | !(wc.index1 - chunkIndex.x >= -worldChunkLoadSize / 2 + 2 && wc.index1 - chunkIndex.x < worldChunkLoadSize / 2 - 2 && wc.index2 - chunkIndex.y >= -worldChunkLoadSize / 2 + 2 && wc.index2 - chunkIndex.y < worldChunkLoadSize / 2 - 2))
+                if (!wc.CanLoadHeights() | wc.ChunksLoaded() != 9)
                 {
                     continue;
                 }
@@ -672,8 +672,9 @@ public class World : MonoBehaviour
                     wc.LoadStructures();
                     reloadStructures.RemoveAt(i);
                 }
-                
+
             }
+            structuresToLoad.Sort();
             for (int i = structuresToLoad.Count - 1; i >= 0; i--)
             {
                 WorldChunk wc = structuresToLoad[i];
@@ -681,7 +682,7 @@ public class World : MonoBehaviour
                 {
                     continue;
                 }
-                if (wc.ChunksLoaded() != 9 | !(wc.index1 - chunkIndex.x >= -worldChunkLoadSize / 2 + 2 && wc.index1 - chunkIndex.x < worldChunkLoadSize / 2 - 2 && wc.index2 - chunkIndex.y >= -worldChunkLoadSize / 2 + 2 && wc.index2 - chunkIndex.y < worldChunkLoadSize / 2 - 2))
+                if (!wc.CanLoadHeights() | wc.ChunksLoaded() != 9)
                 {
                     continue;
                 }
@@ -698,7 +699,6 @@ public class World : MonoBehaviour
                     wc.StructuresFinished = true;
                 }
             }
-            worldsToLoad.Sort();
             AddGraphics = true;
         }
         SortNeeded = false;
@@ -721,7 +721,7 @@ public class World : MonoBehaviour
                     {
                         continue;
                     }
-                    if (wc.StructuresLoaded() != 9 | !(wc.index1 - chunkIndex.x >= -worldChunkLoadSize / 2 + 2 && wc.index1 - chunkIndex.x < worldChunkLoadSize / 2 - 2 && wc.index2 - chunkIndex.y >= -worldChunkLoadSize / 2 + 2 && wc.index2 - chunkIndex.y < worldChunkLoadSize / 2 - 3))
+                    if (!wc.CanLoadHeights())
                     {
                         continue;
                     }

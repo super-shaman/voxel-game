@@ -117,28 +117,20 @@ public class WorldChunk : IComparable
                     {
                         chunk.chunksLoaded -= chunk.chunksLoaded <= 0 ? 0 : 1;
                     }
-                    if (areStructuresLoaded)
+                    if (areStructuresLoaded && chunk.areStructuresLoaded)
                     {
-                        if (!(i == 1 && ii == 1) && chunk.areStructuresLoaded)
+                        for (int iii = 0; iii < 3; iii++)
                         {
-                            chunk.structuresLoaded -= chunk.structuresLoaded <= 0 ? 0 : 1;
-                            for (int iii = 0; iii < 3; iii++)
+                            for (int iiii = 0; iiii < 3; iiii++)
                             {
-                                for (int iiii = 0; iiii < 3; iiii++)
-                                {
-                                    WorldChunk wc = chunk.chunks[iii * 3 + iiii];
-                                    wc.structuresLoaded -= !((wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)) ? 0 : wc.structuresLoaded <= 0 ? 0 : 1;
-                                }
+                                WorldChunk wc = chunk.chunks[iii * 3 + iiii];
+                                wc.structuresLoaded -= !(wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii) ? 0 : wc.structuresLoaded <= 0 ? 0 : 1;
                             }
-                            chunk.areStructuresLoaded = false;
-                            if (StructuresFinished)
-                            {
-                                World.world.ReloadStructures(chunk);
-                            }
-                        }else
+                        }
+                        chunk.areStructuresLoaded = false;
+                        if (chunk.StructuresFinished)
                         {
-
-                            chunk.structuresLoaded -= chunk.structuresLoaded <= 0 ? 0 : 1;
+                            World.world.ReloadStructures(chunk);
                         }
                     }
                 }
@@ -158,7 +150,7 @@ public class WorldChunk : IComparable
                 terrains[i, ii].Unload();
             }
         }
-        StructuresFinished = true;
+        StructuresFinished = false;
     }
 
     public int HeightsLoaded()
@@ -197,12 +189,25 @@ public class WorldChunk : IComparable
         {
             for (int ii = 0; ii < 3; ii++)
             {
-                if (chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii)
+                chunks[i * 3 + ii].heightsLoaded++;
+            }
+        }
+    }
+
+    public bool CanLoadHeights()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            for (int ii = 0; ii < 3; ii++)
+            {
+
+                if (!(chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii))
                 {
-                    chunks[i * 3 + ii].heightsLoaded++;
+                    return false;
                 }
             }
         }
+        return true;
     }
 
     public void LoadHeights()
