@@ -30,7 +30,6 @@ public class WorldNoise
     static int Y_NOISE_GEN = 31337;
     static int Z_NOISE_GEN = 6971;
     static int SEED_NOISE_GEN = 1013;
-    static int SHIFT_NOISE_GEN = 8;
 
     // ported to C#, removed unused code
     // removed all original comments

@@ -10,6 +10,9 @@ public class MainMenu : MonoBehaviour
     public Slider viewDistanceSlider;
     public TextMeshProUGUI loadSizeText;
     public TMP_Dropdown dropDown;
+    public Slider frameRate;
+    public TextMeshProUGUI frameRateText;
+    public TMP_Dropdown qualityDropDown;
 
     public void StartGame()
     {
@@ -25,6 +28,8 @@ public class MainMenu : MonoBehaviour
     void Start()
     {
         r = Screen.currentResolution;
+        Screen.SetResolution(r.width, r.height, FullScreenMode.ExclusiveFullScreen, 60);
+        QualitySettings.SetQualityLevel(5);
     }
 
     public void OnApplicationQuit()
@@ -55,6 +60,18 @@ public class MainMenu : MonoBehaviour
         {
             Screen.SetResolution(r.width, r.height, FullScreenMode.ExclusiveFullScreen, 60);
         }
+    }
+
+    public void SetFrameRate()
+    {
+        int rate = (int)frameRate.value*30;
+        Application.targetFrameRate = rate;
+        frameRateText.text = "Frame Rate " + rate;
+    }
+
+    public void SetQualitySettings()
+    {
+        QualitySettings.SetQualityLevel(5-qualityDropDown.value);
     }
 
     void Update()

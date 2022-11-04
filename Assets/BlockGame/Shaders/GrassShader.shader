@@ -27,19 +27,19 @@ Shader "Custom/GrassShader"
 		struct Input
 		{
 			float2 uv_MainTex;
-			float dist;
+			//float dist;
 		};
 
 		void vert(inout appdata_full v, out Input data)
 		{
 			UNITY_INITIALIZE_OUTPUT(Input, data);
 
-			float l = length(UnityObjectToViewPos(v.vertex));
+			/*float l = length(UnityObjectToViewPos(v.vertex));
 			if (l > 600.0)
 			{
 				v.vertex = 0.0 / 0.0;
 			}
-			data.dist = l;
+			data.dist = l;*/
 		}
 
         half _Glossiness;
@@ -53,9 +53,9 @@ Shader "Custom/GrassShader"
         void surf (Input IN, inout SurfaceOutputStandard o)
         {
 			float4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
-			float l = IN.dist;
-			l = (l > 400.0 ? (l - 400.0) / 200.0 : 0);
-			clip((c.a - 0.5-(l*0.501f)));
+			//float l = IN.dist;
+			//l = (l > 400.0 ? (l - 400.0) / 200.0 : 0);
+			clip((c.a - 0.5));// -(l*0.501f)));
             o.Albedo = c.rgb;
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;

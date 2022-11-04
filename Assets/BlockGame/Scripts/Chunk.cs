@@ -85,7 +85,6 @@ public class Chunk : MonoBehaviour
         }
         offset = md.offset;
         wp = new WorldPosition(new Vector3Int(chunk.index1 * size, 0, chunk.index2 * size),new Vector3());
-        chunk.graphics.Add(this);
         lodGroup.RecalculateBounds();
         lodGroup.size = LODSize;
         mf.mesh.RecalculateBounds();

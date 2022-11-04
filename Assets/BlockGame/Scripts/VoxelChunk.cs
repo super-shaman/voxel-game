@@ -3,21 +3,18 @@ using UnityEngine;
 
 public class VoxelChunk : IComparable
 {
-    
+
     public int index1;
     public int index2;
     public int index3;
-    int size;
+    byte size;
 
     byte[] types;
     public VoxelChunk[] chunks = new VoxelChunk[3 * 3 * 3];
     TerrainChunk terrain;
-    public bool hasGraphics;
 
-    Vector3 offset;
     public static Vector3Int[] loadOrder;
     public static Vector3Int[] loadOrderReverse;
-    MeshData md;
     int memindex = 0;
 
     public int CompareTo(object obj)
@@ -31,7 +28,7 @@ public class VoxelChunk : IComparable
         return memindex;
     }
 
-    public VoxelChunk(int size, int memIndex)
+    public VoxelChunk(byte size, int memIndex)
     {
         this.size = size;
         types = new byte[size * size * size];
@@ -55,11 +52,11 @@ public class VoxelChunk : IComparable
             {
                 for (int iii = 0; iii < 3; iii++)
                 {
-                    VoxelChunk chunk = chunks[i * 3*3 + ii*3+iii];
+                    VoxelChunk chunk = chunks[i * 3 * 3 + ii * 3 + iii];
                     if (chunk != null)
                     {
-                        chunk.chunks[(2 - i) * 3*3 + (2 - ii)*3+2-iii] = null;
-                        chunks[i * 3 *3+ ii*3+iii] = null;
+                        chunk.chunks[(2 - i) * 3 * 3 + (2 - ii) * 3 + 2 - iii] = null;
+                        chunks[i * 3 * 3 + ii * 3 + iii] = null;
                     }
                 }
             }
@@ -139,405 +136,27 @@ public class VoxelChunk : IComparable
 
     public void SetType(int i, int ii, int iii, int type)
     {
-        if (solid[types[i * size * size + ii * size + iii]]) return;
+        if (MeshData.solid[types[i * size * size + ii * size + iii]]) return;
         types[i * size * size + ii * size + iii] = (byte)type;
-    }
-
-    public static int[,] side = {
-        {0,0,0,0,0,0},
-        {0,0,0,0,0,0},
-        {1,0,2,2,2,2 },
-        {3,3,3,3,3,3 },
-        {4,4,4,4,4,4 },
-        {5,5,5,5,5,5 },
-        {6,6,6,6,6,6 }
-    };
-
-    private static byte[] blockShape =
-    {
-        0,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0
-    };
-
-    private static bool[] transparent =
-    {
-        true,
-        false,
-        false,
-        false,
-        true,
-        true,
-        true
-    };
-
-    private static bool[] solid =
-    {
-        false,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false
-    };
-    public static byte[] PhysicsBlock =
-    {
-        0,
-        1,
-        1,
-        1,
-        1,
-        0,
-        0
-    };
-
-    private static bool[] fast =
-    {
-        true,
-        false,
-        false,
-        false,
-        false,
-        true,
-        false
-    };
-
-    private static int[] windingOrder =
-    {
-        0,2,1,1,2,3
-    };
-
-    private static int[,] indexRotator =
-    {
-        { 0,2,1,1,2,3 },
-        { 1,0,3,3,0,2 },
-        { 3,1,2,2,1,0 },
-        { 2,0,3,3,0,1 }
-    };
-
-    public static int rotateIndex(int r, int index)
-    {
-        return indexRotator[r, index];
-    }
-
-    bool[] visible = new bool[6];
-
-    ushort LoadVertex(Vector3 v, Vector3 n, Vector2 uv, int side)
-    {
-        side = 0;
-        ushort index1;
-        bool pass = md.vertDictionary[side].TryGetValue(v, out index1);
-        if (pass)
-        {
-            if (Vector3.Dot(md.normals[index1].normalized, n) > -0.999f)
-            {
-                md.normals[index1] += n;
-            }else
-            {
-                side = 1;
-                index1 = 0;
-                pass = md.vertDictionary[side].TryGetValue(v, out index1);
-                if (pass)
-                {
-                    md.normals[index1] += n;
-                }
-                else
-                {
-                    index1 = (ushort)md.vertices.Count;
-                    md.vertDictionary[side].Add(v, index1);
-                    md.vertices.Add(v);
-                    md.normals.Add(n);
-                    md.uvs.Add(uv);
-                }
-            }
-            
-        }
-        else
-        {
-
-            side = 1;
-            ushort index2 = 0;
-            pass = md.vertDictionary[side].TryGetValue(v, out index2);
-            if (pass)
-            {
-                if (Vector3.Dot(md.normals[index2].normalized, n) > -0.999f)
-                {
-                    md.normals[index2] += n;
-                    index1 = index2;
-                }else
-                {
-                    index1 = (ushort)md.vertices.Count;
-                    md.vertDictionary[0].Add(v, index1);
-                    md.vertices.Add(v);
-                    md.normals.Add(n);
-                    md.uvs.Add(uv);
-                }
-            }
-            else 
-            {
-                index1 = (ushort)md.vertices.Count;
-                md.vertDictionary[0].Add(v, index1);
-                md.vertices.Add(v);
-                md.normals.Add(n);
-                md.uvs.Add(uv);
-            }
-        }
-        return index1;
-    }
-    
-
-    void LoadDiagonal1Front(int i, int ii, int iii, int type, Vector3 off)
-    {
-        {
-            int index = md.vertices.Count;
-            md.vertices.Add(new Vector3(i + 1, iii, ii) + offset+off);
-            md.vertices.Add(new Vector3(i, iii, ii + 1) + offset+off);
-            md.vertices.Add(new Vector3(i + 1, iii + 1, ii) + offset+off);
-            md.vertices.Add(new Vector3(i, iii + 1, ii + 1) + offset+off);
-            Vector3 n = new Vector3(1, 0, 1).normalized;
-            md.normals.Add(new Vector3(1, 0, -1).normalized);
-            md.normals.Add(new Vector3(-1, 0, 1).normalized);
-            md.normals.Add(new Vector3(1, 1, -1).normalized);
-            md.normals.Add(new Vector3(-1, 1, 1).normalized);
-            md.uvs.Add(new Vector2(0, 0));
-            md.uvs.Add(new Vector2(1, 0));
-            md.uvs.Add(new Vector2(0, 1));
-            md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add((ushort)index);
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 3));
-        }
-    }
-
-    void LoadDiagonal1Back(int i, int ii, int iii, int type, Vector3 off)
-    {
-        {
-            int index = md.vertices.Count;
-            md.vertices.Add(new Vector3(i, iii, ii + 1) + offset + off);
-            md.vertices.Add(new Vector3(i + 1, iii, ii) + offset + off);
-            md.vertices.Add(new Vector3(i, iii + 1, ii + 1) + offset + off);
-            md.vertices.Add(new Vector3(i + 1, iii + 1, ii) + offset + off);
-            Vector3 n = new Vector3(-1, 0, -1).normalized;
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.uvs.Add(new Vector2(0, 0));
-            md.uvs.Add(new Vector2(1, 0));
-            md.uvs.Add(new Vector2(0, 1));
-            md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add((ushort)index);
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 3));
-        }
-    }
-
-    void LoadDiagonal2Front(int i, int ii, int iii, int type, Vector3 off)
-    {
-        {
-            int index = md.vertices.Count;
-            md.vertices.Add(new Vector3(i + 1, iii, ii + 1) + offset + off);
-            md.vertices.Add(new Vector3(i, iii, ii) + offset + off);
-            md.vertices.Add(new Vector3(i + 1, iii + 1, ii + 1) + offset + off);
-            md.vertices.Add(new Vector3(i, iii + 1, ii) + offset + off);
-            Vector3 n = new Vector3(-1, 0, 1).normalized;
-            md.normals.Add(new Vector3(1,0,1).normalized);
-            md.normals.Add(new Vector3(-1, 0, -1).normalized);
-            md.normals.Add(new Vector3(1, 1, 1).normalized);
-            md.normals.Add(new Vector3(-1, 1, -1).normalized);
-            md.uvs.Add(new Vector2(0, 0));
-            md.uvs.Add(new Vector2(1, 0));
-            md.uvs.Add(new Vector2(0, 1));
-            md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add((ushort)index);
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 3));
-        }
-    }
-
-    void LoadDiagonal2Back(int i, int ii, int iii, int type, Vector3 off)
-    {
-        {
-            int index = md.vertices.Count;
-            md.vertices.Add(new Vector3(i, iii, ii) + offset + off);
-            md.vertices.Add(new Vector3(i + 1, iii, ii + 1) + offset + off);
-            md.vertices.Add(new Vector3(i, iii + 1, ii) + offset + off);
-            md.vertices.Add(new Vector3(i + 1, iii + 1, ii + 1) + offset + off);
-            Vector3 n = new Vector3(1, 0, -1).normalized;
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.normals.Add(n);
-            md.uvs.Add(new Vector2(0, 0));
-            md.uvs.Add(new Vector2(1, 0));
-            md.uvs.Add(new Vector2(0, 1));
-            md.uvs.Add(new Vector2(1, 1));
-            md.indices[side[type, 2]].Add((ushort)index);
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 1));
-            md.indices[side[type, 2]].Add((ushort)(index + 2));
-            md.indices[side[type, 2]].Add((ushort)(index + 3));
-        }
-    }
-
-    void LoadTopFast(int i, int ii, int iii, int type)
-    {
-        if (visible[5])
-        {
-            Vector3 n = new Vector3(0, 1, 0);
-            Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
-            ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[2] ? -1 : 0).normalized, uv+new Vector2(1,0),0),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),0)
-            };
-            md.indices[side[type, 0]].Add(indexes[windingOrder[0]]);
-            md.indices[side[type, 0]].Add(indexes[windingOrder[1]]);
-            md.indices[side[type, 0]].Add(indexes[windingOrder[2]]);
-            md.indices[side[type, 0]].Add(indexes[windingOrder[3]]);
-            md.indices[side[type, 0]].Add(indexes[windingOrder[4]]);
-            md.indices[side[type, 0]].Add(indexes[windingOrder[5]]);
-        }
-    }
-
-    void LoadBottomFast(int i, int ii, int iii, int type)
-    {
-        if (visible[4])
-        {
-            Vector3 n = new Vector3(0, -1, 0);
-            Vector2 uv = new Vector2(i + offset.x, ii + offset.z);
-            ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),1),
-                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[2] ? -1 : 0).normalized, uv+new Vector2(-1,0),1),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),1),
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(-1,1),1)
-            };
-            md.indices[side[type, 1]].Add(indexes[windingOrder[0]]);
-            md.indices[side[type, 1]].Add(indexes[windingOrder[1]]);
-            md.indices[side[type, 1]].Add(indexes[windingOrder[2]]);
-            md.indices[side[type, 1]].Add(indexes[windingOrder[3]]);
-            md.indices[side[type, 1]].Add(indexes[windingOrder[4]]);
-            md.indices[side[type, 1]].Add(indexes[windingOrder[5]]);
-        }
-    }
-
-    void LoadRightFast(int i, int ii, int iii, int type)
-    {
-        if (visible[1])
-        {
-            Vector3 n = new Vector3(1, 0, 0);
-            Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
-            ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),2),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized, uv+new Vector2(1,0),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,1),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),2)
-            };
-            md.indices[side[type, 2]].Add(indexes[windingOrder[0]]);
-            md.indices[side[type, 2]].Add(indexes[windingOrder[1]]);
-            md.indices[side[type, 2]].Add(indexes[windingOrder[2]]);
-            md.indices[side[type, 2]].Add(indexes[windingOrder[3]]);
-            md.indices[side[type, 2]].Add(indexes[windingOrder[4]]);
-            md.indices[side[type, 2]].Add(indexes[windingOrder[5]]);
-        }
-    }
-
-    void LoadLeftFast(int i, int ii, int iii, int type)
-    {
-        if (visible[0])
-        {
-            Vector3 n = new Vector3(-1, 0, 0);
-            Vector2 uv = new Vector2(ii + offset.z, iii + offset.y);
-            ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,0),3),
-                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(-1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized, uv+new Vector2(-1,0),3),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),3),
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(-1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(-1,1),3)
-            };
-            md.indices[side[type, 3]].Add(indexes[windingOrder[0]]);
-            md.indices[side[type, 3]].Add(indexes[windingOrder[1]]);
-            md.indices[side[type, 3]].Add(indexes[windingOrder[2]]);
-            md.indices[side[type, 3]].Add(indexes[windingOrder[3]]);
-            md.indices[side[type, 3]].Add(indexes[windingOrder[4]]);
-            md.indices[side[type, 3]].Add(indexes[windingOrder[5]]);
-        }
-    }
-
-    void LoadForwardFast(int i, int ii, int iii, int type)
-    {
-        if (visible[3])
-        {
-            Vector3 n = new Vector3(0, 0, 1);
-            Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
-            ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, 1).normalized,uv+new Vector2(0,0),4),
-                LoadVertex(new Vector3(i, iii, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, 1).normalized, uv+new Vector2(-1,0),4),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(0,1),4),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(-1,1),4)
-            };
-            md.indices[side[type, 4]].Add(indexes[windingOrder[0]]);
-            md.indices[side[type, 4]].Add(indexes[windingOrder[1]]);
-            md.indices[side[type, 4]].Add(indexes[windingOrder[2]]);
-            md.indices[side[type, 4]].Add(indexes[windingOrder[3]]);
-            md.indices[side[type, 4]].Add(indexes[windingOrder[4]]);
-            md.indices[side[type, 4]].Add(indexes[windingOrder[5]]);
-        }
-    }
-
-    void LoadBackFast(int i, int ii, int iii, int type)
-    {
-        if (visible[2])
-        {
-            Vector3 n = new Vector3(0, 0, -1);
-            Vector2 uv = new Vector2(i + offset.x, iii + offset.y);
-            ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, -1).normalized,uv+new Vector2(0,0),5),
-                LoadVertex(new Vector3(i + 1, iii, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, -1).normalized, uv+new Vector2(1,0),5),
-                LoadVertex(new Vector3(i, iii + 1, ii) + offset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(0,1),5),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + offset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(1,1),5)
-            };
-            md.indices[side[type, 5]].Add(indexes[windingOrder[0]]);
-            md.indices[side[type, 5]].Add(indexes[windingOrder[1]]);
-            md.indices[side[type, 5]].Add(indexes[windingOrder[2]]);
-            md.indices[side[type, 5]].Add(indexes[windingOrder[3]]);
-            md.indices[side[type, 5]].Add(indexes[windingOrder[4]]);
-            md.indices[side[type, 5]].Add(indexes[windingOrder[5]]);
-        }
     }
 
 
     public void LoadGraphicsUpFast()
     {
-        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
         if (md.offset.magnitude == 0)
         {
-            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-            offset *= size;
-            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-            md.offset = offset;
-            offset = new Vector3();
-        }else
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = md.voxelOffset;
+            md.voxelOffset = new Vector3();
+        } else
         {
-            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-            offset *= size;
-            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-            offset -= md.offset;
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.voxelOffset -= md.offset;
         }
         for (int i = 0; i < loadOrder.Length; i++)
         {
@@ -546,100 +165,201 @@ public class VoxelChunk : IComparable
             {
                 terrain.worldChunk.meshData.Add(World.world.GetMeshData());
                 md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-                offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-                offset *= size;
-                offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-                md.offset = offset;
-                offset = new Vector3();
+                md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                md.voxelOffset *= size;
+                md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                md.offset = md.voxelOffset;
+                md.voxelOffset = new Vector3();
             }
             int type = types[v.x * size * size + v.y * size + v.z];
             if (type != 0)
             {
-                if (blockShape[type] == 0)
-                {
-                    int t = GetType(v.x - 1, v.y, v.z);
-                    visible[0] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x + 1, v.y, v.z);
-                    visible[1] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y-1, v.z);
-                    visible[2] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y+1, v.z);
-                    visible[3] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y, v.z-1);
-                    visible[4] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y, v.z+1);
-                    visible[5] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                }
-                else
-                {
-                }
             }
         }
     }
 
     public void LoadGraphicsDownFast()
     {
-        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
         if (md.offset.magnitude == 0)
         {
-            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-            offset *= size;
-            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-            md.offset = offset;
-            offset = new Vector3();
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = md.voxelOffset;
+            md.voxelOffset = new Vector3();
         }
         else
         {
-            offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-            offset *= size;
-            offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-            offset -= md.offset;
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.voxelOffset -= md.offset;
         }
-        for (int i = 0; i < loadOrderReverse.Length; i++)
+        for (int i = size - 1; i >= 0; i--)
         {
-            Vector3Int v = loadOrderReverse[i];
-            if (md.vertices.Count > MeshData.maxVertices)
+            for (int ii = size - 1; ii >= 0; ii--)
             {
-                terrain.worldChunk.meshData.Add(World.world.GetMeshData());
-                md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-                offset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-                offset *= size;
-                offset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-                md.offset = offset;
-                offset = new Vector3();
-            }
-            int type = types[v.x * size * size + v.y * size + v.z];
-            if (type != 0)
-            {
-                if (blockShape[type] == 0)
+                for (int iii = size - 1; iii >= 0; iii--)
                 {
-                    int t = GetType(v.x - 1, v.y, v.z);
-                    visible[0] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x + 1, v.y, v.z);
-                    visible[1] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y - 1, v.z);
-                    visible[2] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y + 1, v.z);
-                    visible[3] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y, v.z - 1);
-                    visible[4] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    t = GetType(v.x, v.y, v.z + 1);
-                    visible[5] = t == -1 ? false : solid[type] ? transparent[t] : fast[t] && transparent[t];
-                    LoadTopFast(v.x, v.y, v.z, type);
-                    LoadRightFast(v.x, v.y, v.z, type);
-                    LoadForwardFast(v.x, v.y, v.z, type);
+                    Vector3Int v = new Vector3Int(i, ii, iii);
+                    if (md.vertices.Count > MeshData.maxVertices)
+                    {
+                        terrain.worldChunk.meshData.Add(World.world.GetMeshData());
+                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                        md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                        md.voxelOffset *= size;
+                        md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                        md.offset = md.voxelOffset;
+                        md.voxelOffset = new Vector3();
+                    }
+                    int type = types[v.x * size * size + v.y * size + v.z];
+                    if (type != 0)
+                    {
+                        if (MeshData.blockShape[type] == 0)
+                        {
+                            md.LoadVoxel(v,type,GetType(v.x-1,v.y,v.z), GetType(v.x + 1, v.y, v.z), GetType(v.x, v.y-1, v.z), GetType(v.x, v.y+1, v.z), GetType(v.x, v.y, v.z-1), GetType(v.x, v.y, v.z+1));
+                        }
+                        else
+                        {
+                            md.LoadDiagonal2Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                            md.LoadDiagonal1Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
 
-                    LoadBottomFast(v.x, v.y, v.z, type);
-                    LoadLeftFast(v.x, v.y, v.z, type);
-                    LoadBackFast(v.x, v.y, v.z, type);
+                            //LoadDiagonal1Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                            //LoadDiagonal2Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                        }
+                    }
                 }
-                else
+            }
+        }
+    }
+    public void LoadGraphicsDownFastNoGrass()
+    {
+        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        if (md.offset.magnitude == 0)
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = md.voxelOffset;
+            md.voxelOffset = new Vector3();
+        }
+        else
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.voxelOffset -= md.offset;
+        }
+        for (int i = size - 1; i >= 0; i--)
+        {
+            for (int ii = size - 1; ii >= 0; ii--)
+            {
+                for (int iii = size - 1; iii >= 0; iii--)
                 {
-                    LoadDiagonal2Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
-                    LoadDiagonal1Front(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+                    Vector3Int v = new Vector3Int(i, ii, iii);
+                    if (md.vertices.Count > MeshData.maxVertices)
+                    {
+                        terrain.worldChunk.meshData.Add(World.world.GetMeshData());
+                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                        md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                        md.voxelOffset *= size;
+                        md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                        md.offset = md.voxelOffset;
+                        md.voxelOffset = new Vector3();
+                    }
+                    int type = types[v.x * size * size + v.y * size + v.z];
+                    if (type != 0)
+                    {
+                        if (MeshData.blockShape[type] == 0)
+                        {
+                            md.LoadVoxelFast(v, type, GetType(v.x - 1, v.y, v.z), GetType(v.x + 1, v.y, v.z), GetType(v.x, v.y - 1, v.z), GetType(v.x, v.y + 1, v.z), GetType(v.x, v.y, v.z - 1), GetType(v.x, v.y, v.z + 1));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
-                    //LoadDiagonal1Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
-                    //LoadDiagonal2Back(v.x, v.y, v.z, type, new Vector3((float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 0) * 0.25f, 0, (float)WorldNoise.ValueCoherentNoise3D(index1 * size + v.x, index2 * size + v.y, index3 * size + v.z, 1) * 0.25f));
+    public Vector4 GetLowResData(Vector3Int vv)
+    {
+        Vector4 v = new Vector4();
+        for (int i = 0; i < 2; i++)
+        {
+            for (int ii = 0; ii < 2; ii++)
+            {
+                for (int iii = 0; iii < 2; iii++)
+                {
+                    int type = GetType(vv.x + i, vv.y + ii, vv.z + iii);
+                    if (type != 0)
+                    {
+                        v.w += 1;
+                    }
+                }
+            }
+        }
+        return v;
+    }
+
+    public static Color[] colors;
+    
+    public void LoadGraphicsDownLowQ()
+    {
+        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        if (md.offset.magnitude == 0)
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = md.voxelOffset;
+            md.voxelOffset = new Vector3();
+        }
+        else
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.voxelOffset -= md.offset;
+        }
+        for (int i = size/2 - 1; i >= 0; i--)
+        {
+            for (int ii = size/2 - 1; ii >= 0; ii--)
+            {
+                for (int iii = size/2 - 1; iii >= 0; iii--)
+                {
+                    Vector3Int v = new Vector3Int(i, ii, iii);
+                    if (md.vertices.Count > MeshData.maxVertices)
+                    {
+                        terrain.worldChunk.meshData.Add(World.world.GetMeshData());
+                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                        md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                        md.voxelOffset *= size;
+                        md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                        md.offset = md.voxelOffset;
+                        md.voxelOffset = new Vector3();
+                    }
+                    int a = 0;
+                    Color c = new Color(0,0,0,1);
+                    for (int o = 0; o < 2; o++)
+                    {
+                        for (int oo = 0; oo < 2; oo++)
+                        {
+                            for (int ooo = 0; ooo < 2; ooo++)
+                            {
+                                int t = GetType(v.x + i, v.y + ii, v.z + iii);
+                                if (t != 0)
+                                {
+                                    a++;
+                                    c += colors[t];
+                                }
+                            }
+                        }
+                    }
+                    if (a >= 4)
+                    {
+                        c = c / a;
+
+                    }
                 }
             }
         }

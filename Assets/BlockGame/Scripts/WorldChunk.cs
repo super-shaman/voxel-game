@@ -98,7 +98,9 @@ public class WorldChunk : IComparable
         terrain.Load(index1 * worldChunkSize + i, index2 * worldChunkSize + ii);
         terrain.worldChunk = this;
     }
+
     public bool StructuresFinished;
+
     public void Unload()
     {
         unloading = true;
@@ -290,6 +292,7 @@ public class WorldChunk : IComparable
     public static Vector2Int[] loadOrder;
     public static Vector2Int[] loadOrderReverse;
     public bool graphicsLoaded = false;
+    public byte lodLevel = 0;
 
     public void LoadGraphics()
     {
@@ -308,11 +311,43 @@ public class WorldChunk : IComparable
         {
             meshData[i].Normalize();
         }
+        lodLevel = 0;
+        graphicsLoaded = true;
+        done = true;
+    }
+    public void LoadGraphicsNoGrass()
+    {
+        for (int i = 0; i < loadOrderReverse.Length; i++)
+        {
+            Vector2Int v = loadOrderReverse[i];
+            terrains[v.x, v.y].SortVoxelChunks();
+            terrains[v.x, v.y].LoadGraphicsDownNoGrass();
+        }
+        /*for (int i = 0; i < loadOrder.Length; i++)
+        {
+            Vector2Int v = loadOrder[i];
+            terrains[v.x, v.y].LoadGraphicsUp();
+        }*/
+        for (int i = 0; i < meshData.Count; i++)
+        {
+            meshData[i].Normalize();
+        }
+        lodLevel = 1;
         graphicsLoaded = true;
         done = true;
     }
     // cool physics
 
+    private static byte[] PhysicsBlock =
+    {
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0
+    };
     public void SimulatePlayer(Player p)
     {
         Vector3 pos = p.transform.position;
@@ -360,13 +395,13 @@ public class WorldChunk : IComparable
         int ooer = Mathf.FloorToInt((float)ii / size);
         int iii = Mathf.FloorToInt(pos.y) + p.wp.posIndex.y - 1;
         TerrainChunk tc = terrain.terrains[oer, ooer];
-        if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i-oer*size,ii-ooer*size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1)
+        if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i-oer*size,ii-ooer*size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1)
         {
             p.OnGround = true;
             pos += new Vector3(0, (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f)), 0);
             p.velocity.y = 0;
         }
-        if (VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size, iii+2)] == 1 && pos.y + p.wp.posIndex.y+0.75f > iii+2)
+        if (PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size, iii+2)] == 1 && pos.y + p.wp.posIndex.y+0.75f > iii+2)
         {
             p.OnGround = true;
             pos += new Vector3(0, (iii +2 - (pos.y + p.wp.posIndex.y +0.75f)), 0);
@@ -375,14 +410,14 @@ public class WorldChunk : IComparable
 
         float characterWidth = 0.25f;
         float  f = terrain.index1 * worldChunkSize * size + i + 1 - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x + characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii + 1)] == 1 | (pos.y+p.wp.posIndex.y+0.75f > iii+2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii + 2)] == 1) && f < 0)
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii + 1)] == 1 | (pos.y+p.wp.posIndex.y+0.75f > iii+2 && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii + 2)] == 1) && f < 0)
         {
             if (Vector3.Dot(new Vector3(-1, 0, 0), p.velocity.normalized) < -0.75f)
             {
                 p.run = false;
             }
             pos.x += f;
-        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f < -0.001f)
+        }else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f < -0.001f)
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -390,14 +425,14 @@ public class WorldChunk : IComparable
         }
 
         f = terrain.index1 * worldChunkSize * size + i - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x - characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii + 2)] == 1) && f > 0)
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii + 2)] == 1) && f > 0)
         {
             if (Vector3.Dot(new Vector3(1, 0, 0), p.velocity.normalized) < -0.75f)
             {
                 p.run = false;
             }
             pos.x += f;
-        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f > 0.001f)
+        }else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f > 0.001f)
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -405,14 +440,14 @@ public class WorldChunk : IComparable
         }
 
         f = terrain.index2 * worldChunkSize * size + ii + 1 - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z + characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii + 2)] == 1) && f < 0)
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii + 2)] == 1) && f < 0)
         {
             if (Vector3.Dot(new Vector3(0, 0, -1), p.velocity.normalized) < -0.75f)
             {
                 p.run = false;
             }
             pos.z += f;
-        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f < -0.001f)
+        }else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f < -0.001f)
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -420,14 +455,14 @@ public class WorldChunk : IComparable
         }
 
         f = terrain.index2 * worldChunkSize * size + ii - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z - characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii + 2)] == 1) && f > 0)
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii + 2)] == 1) && f > 0)
         {
             if (Vector3.Dot(new Vector3(0, 0, 1), p.velocity.normalized) < -0.75f)
             {
                 p.run = false;
             }
             pos.z += f;
-        }else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f > 0.001f)
+        }else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && f > 0.001f)
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -436,7 +471,7 @@ public class WorldChunk : IComparable
 
         f = terrain.index1 * worldChunkSize * size + i - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x - characterWidth);
         float ff = terrain.index2 * worldChunkSize * size + ii - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z - characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii + 2)] == 1) && (f > 0 && ff > 0))
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii + 2)] == 1) && (f > 0 && ff > 0))
         {
             if (Mathf.Abs(f) > Mathf.Abs(ff))
             {
@@ -447,7 +482,7 @@ public class WorldChunk : IComparable
                 pos.x += f;
             }
         }
-        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f > 0.001f && ff > 0.001f))
+        else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size-1, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f > 0.001f && ff > 0.001f))
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -456,7 +491,7 @@ public class WorldChunk : IComparable
 
         f = terrain.index1 * worldChunkSize * size + i+1 - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x + characterWidth);
         ff = terrain.index2 * worldChunkSize * size + ii - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z - characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size+1, ii - ooer * size - 1, iii + 2)] == 1) && (f < 0 && ff > 0))
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size+1, ii - ooer * size - 1, iii + 2)] == 1) && (f < 0 && ff > 0))
         {
             if (Mathf.Abs(f) > Mathf.Abs(ff))
             {
@@ -467,7 +502,7 @@ public class WorldChunk : IComparable
                 pos.x += f;
             }
         }
-        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f < -0.001f && ff > 0.001f))
+        else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size - 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f < -0.001f && ff > 0.001f))
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -476,7 +511,7 @@ public class WorldChunk : IComparable
 
         f = terrain.index1 * worldChunkSize * size + i + 1 - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x + characterWidth);
         ff = terrain.index2 * worldChunkSize * size + ii+1 - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z + characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii + 2)] == 1) && (f < 0 && ff < 0))
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii + 2)] == 1) && (f < 0 && ff < 0))
         {
             if (Mathf.Abs(f) > Mathf.Abs(ff))
             {
@@ -487,7 +522,7 @@ public class WorldChunk : IComparable
                 pos.x += f;
             }
         }
-        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f < -0.001f && ff < -0.001f))
+        else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size + 1, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f < -0.001f && ff < -0.001f))
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;
@@ -496,7 +531,7 @@ public class WorldChunk : IComparable
 
         f = terrain.index1 * worldChunkSize * size + i - worldChunkSize * size / 2 - p.wp.posIndex.x - (pos.x - characterWidth);
         ff = terrain.index2 * worldChunkSize * size + ii + 1 - worldChunkSize * size / 2 - p.wp.posIndex.z - (pos.z + characterWidth);
-        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii)] == 1) | VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii + 2)] == 1) && (f > 0 && ff < 0))
+        if ((pos.y + p.wp.posIndex.y - 1 <= iii + 0.99f && PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii)] == 1) | PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii + 1)] == 1 | (pos.y + p.wp.posIndex.y + 0.75f > iii + 2 && PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii + 2)] == 1) && (f > 0 && ff < 0))
         {
             if (Mathf.Abs(f) > Mathf.Abs(ff))
             {
@@ -507,7 +542,7 @@ public class WorldChunk : IComparable
                 pos.x += f;
             }
         }
-        else if (p.velocity.y <= 0 && VoxelChunk.PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f > 0.001f && ff < -0.001f))
+        else if (p.velocity.y <= 0 && PhysicsBlock[tc.GetBlock(i - oer * size - 1, ii - ooer * size + 1, iii)] == 1 && pos.y + p.wp.posIndex.y - 1 <= iii + 1 && (f > 0.001f && ff < -0.001f))
         {
             pos.y += (iii + 1 - (pos.y + p.wp.posIndex.y - 0.999f));
             p.velocity.y = 0;

@@ -155,6 +155,14 @@ public class TerrainChunk
             chunk.LoadGraphicsDownFast();
         }
     }
+    public void LoadGraphicsDownNoGrass()
+    {
+        for (int i = loadedChunks.Count - 1; i >= 0; i--)
+        {
+            VoxelChunk chunk = loadedChunks[i];
+            chunk.LoadGraphicsDownFastNoGrass();
+        }
+    }
     public void LoadGraphicsUp()
     {
         for (int i = 0; i < loadedChunks.Count; i++)

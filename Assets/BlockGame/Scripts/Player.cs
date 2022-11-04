@@ -21,8 +21,6 @@ public class Player : MonoBehaviour
         updateWp = new WorldPosition(wp);
         cam.opaqueSortMode = UnityEngine.Rendering.OpaqueSortMode.FrontToBack;
         cam.transparencySortMode = TransparencySortMode.Perspective;
-        Application.targetFrameRate = 60;
-        QualitySettings.vSyncCount = 1;
     }
     Vector3 previousLocalPosition = new Vector3();
     public void SetWorldPos(Vector3 v)
@@ -30,6 +28,7 @@ public class Player : MonoBehaviour
         previousLocalPosition = v;
         updateWp.Add(v);
     }
+
 
     public void UpdateWorldPos()
     {
@@ -154,7 +153,7 @@ public class Player : MonoBehaviour
         //Physics simulation for player now done on the render thread
 
         a = Mathf.CeilToInt(Time.deltaTime / (1.0f / 60.0f));
-        a *= Mathf.FloorToInt((velocity.magnitude > 1000 ? 1000 : velocity.magnitude)+1)*8;
+        a *= Mathf.FloorToInt((velocity.magnitude > 64 ? 64 : velocity.magnitude)+1)*8;
         for (int i = 0; i < a; i++)
         {
             if (flying)
@@ -185,8 +184,6 @@ public class Player : MonoBehaviour
     bool adjustingSpeed = false;
     float speedDelta = 0;
     float jumpStrength;
-    float jumpTime = 0;
-    float jumpSteps = 0.5f;
 
     public WorldChunk chunk;
 
@@ -210,9 +207,13 @@ public class Player : MonoBehaviour
         {
             move += new Vector3(1, 0, 0);
         }
+        if (down)
+        {
+            move += new Vector3(0, -1, 0);
+        }
         move = q*move.normalized;
         move *= 1+(speed * speed*0.5f);
-        move *= MoveSpeed;
+        move *= MoveSpeed * (run ? 2.5f : 1);
         float timer = Time.deltaTime*10 / a;
         timer = timer > 1 ? 1 : timer;
         velocity += (move - velocity) * timer;
@@ -311,6 +312,7 @@ public class Player : MonoBehaviour
             }
         }
     }
+
     private void FixedUpdate()
     {
     }
