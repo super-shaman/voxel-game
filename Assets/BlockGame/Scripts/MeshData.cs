@@ -33,6 +33,7 @@ public class MeshData
             normals[i].Normalize();
         }
     }
+    public Vector2Int[] lowResLoader = new Vector2Int[8];
     public int lod = 0;
     public static int maxVertices = 65000;
     public void Unload()
@@ -100,6 +101,78 @@ public class MeshData
         LoadLeftFast(v.x, v.y, v.z, type);
         LoadBackFast(v.x, v.y, v.z, type);
     }
+    public void LoadVoxelFast(Vector3Int v, int type, bool leftType, bool rightType, bool backType, bool frontType, bool bottomType, bool topType)
+    {
+        bool t = leftType;
+        visible[0] = t;
+        t = rightType;
+        visible[1] = t;
+        t = backType;
+        visible[2] = t;
+        t = frontType;
+        visible[3] = t;
+        t = bottomType;
+        visible[4] = t;
+        t = topType;
+        visible[5] = t;
+        LoadTopFast(v.x, v.y, v.z, type);
+        LoadRightFast(v.x, v.y, v.z, type);
+        LoadForwardFast(v.x, v.y, v.z, type);
+
+        LoadBottomFast(v.x, v.y, v.z, type);
+        LoadLeftFast(v.x, v.y, v.z, type);
+        LoadBackFast(v.x, v.y, v.z, type);
+    }
+
+    public int VisibleFaces(Vector3Int v, int type, int leftType, int rightType, int backType, int frontType, int bottomType, int topType)
+    {
+        int t = leftType;
+        visible[0] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = rightType;
+        visible[1] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = backType;
+        visible[2] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = frontType;
+        visible[3] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = bottomType;
+        visible[4] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = topType;
+        visible[5] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        int i = visible[0] ? 1 : 0;
+        i += visible[1] ? 1 : 0;
+        i += visible[2] ? 1 : 0;
+        i += visible[3] ? 1 : 0;
+        i += visible[4] ? 1 : 0;
+        i += visible[5] ? 1 : 0;
+        return i;
+    }
+
+    public Color GetVoxelColor(Vector3Int v, int type, int leftType, int rightType, int bottomType, int topType, int backType, int frontType)
+    {
+        int t = leftType;
+        visible[0] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = rightType;
+        visible[1] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = bottomType;
+        visible[2] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = topType;
+        visible[3] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = backType;
+        visible[4] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        t = frontType;
+        visible[5] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
+        Color c = new Color(0,0,0,0);
+        for (int i = 0; i < 6; i++)
+        {
+            if (visible[i])
+            {
+                c += colors[side[type, i]];
+            }
+        }
+        return c;
+    }
+
+    public static Color[] colors;
 
 
     public bool[] visible = new bool[6];
@@ -164,7 +237,7 @@ public class MeshData
         true,
         false
     };
-    private static bool[] fastSolid =
+    public  static bool[] fastSolid =
     {
         true,
         false,
@@ -204,6 +277,7 @@ public class MeshData
     }
 
     public Vector3 voxelOffset;
+    public float scale = 1.0f;
 
     ushort LoadVertex(Vector3 v, Vector3 n, Vector2 uv, int side)
     {
@@ -382,10 +456,10 @@ public class MeshData
             Vector3 n = new Vector3(0, 1, 0);
             Vector2 uv = new Vector2(i + voxelOffset.x, ii + voxelOffset.z);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii + 1, ii) + voxelOffset,new Vector3(visible[0] ? -1 : 0, 1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, 1, visible[2] ? -1 : 0).normalized, uv+new Vector2(1,0),0),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + voxelOffset,new Vector3(visible[0] ? -1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),0),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + voxelOffset,new Vector3(visible[1] ? 1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),0)
+                LoadVertex(new Vector3(i, iii + scale, ii) + voxelOffset,new Vector3(visible[0] ? -1 : 0, 1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),0),
+                LoadVertex(new Vector3(i + scale, iii + scale, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, 1, visible[2] ? -1 : 0).normalized, uv+new Vector2(1,0),0),
+                LoadVertex(new Vector3(i, iii + scale, ii + scale) + voxelOffset,new Vector3(visible[0] ? -1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),0),
+                LoadVertex(new Vector3(i + scale, iii + scale, ii + scale) + voxelOffset,new Vector3(visible[1] ? 1 : 0, 1, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),0)
             };
             indices[side[type, 0]].Add(indexes[windingOrder[0]]);
             indices[side[type, 0]].Add(indexes[windingOrder[1]]);
@@ -403,10 +477,10 @@ public class MeshData
             Vector3 n = new Vector3(0, -1, 0);
             Vector2 uv = new Vector2(i + voxelOffset.x, ii + voxelOffset.z);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, -1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),1),
+                LoadVertex(new Vector3(i + scale, iii, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, -1, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),1),
                 LoadVertex(new Vector3(i, iii, ii) + voxelOffset,new Vector3(visible[0] ? -1 : 0, -1, visible[2] ? -1 : 0).normalized, uv+new Vector2(-1,0),1),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + voxelOffset,new Vector3(visible[1] ? 1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),1),
-                LoadVertex(new Vector3(i, iii, ii + 1) + voxelOffset,new Vector3(visible[0] ? -1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(-1,1),1)
+                LoadVertex(new Vector3(i + scale, iii, ii + scale) + voxelOffset,new Vector3(visible[1] ? 1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),1),
+                LoadVertex(new Vector3(i, iii, ii + scale) + voxelOffset,new Vector3(visible[0] ? -1 : 0, -1, visible[3] ? 1 : 0).normalized,uv+new Vector2(-1,1),1)
             };
             indices[side[type, 1]].Add(indexes[windingOrder[0]]);
             indices[side[type, 1]].Add(indexes[windingOrder[1]]);
@@ -424,10 +498,10 @@ public class MeshData
             Vector3 n = new Vector3(1, 0, 0);
             Vector2 uv = new Vector2(ii + voxelOffset.z, iii + voxelOffset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii) + voxelOffset,new Vector3(1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),2),
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + voxelOffset,new Vector3(1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized, uv+new Vector2(1,0),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + voxelOffset,new Vector3(1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,1),2),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + voxelOffset,new Vector3(1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),2)
+                LoadVertex(new Vector3(i + scale, iii, ii) + voxelOffset,new Vector3(1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,0),2),
+                LoadVertex(new Vector3(i + scale, iii, ii + scale) + voxelOffset,new Vector3(1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized, uv+new Vector2(1,0),2),
+                LoadVertex(new Vector3(i + scale, iii + scale, ii) + voxelOffset,new Vector3(1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(0,1),2),
+                LoadVertex(new Vector3(i + scale, iii + scale, ii + scale) + voxelOffset,new Vector3(1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(1,1),2)
             };
             indices[side[type, 2]].Add(indexes[windingOrder[0]]);
             indices[side[type, 2]].Add(indexes[windingOrder[1]]);
@@ -445,10 +519,10 @@ public class MeshData
             Vector3 n = new Vector3(-1, 0, 0);
             Vector2 uv = new Vector2(ii + voxelOffset.z, iii + voxelOffset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i, iii, ii + 1) + voxelOffset,new Vector3(-1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,0),3),
+                LoadVertex(new Vector3(i, iii, ii + scale) + voxelOffset,new Vector3(-1, visible[4] ? -1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,0),3),
                 LoadVertex(new Vector3(i, iii, ii) + voxelOffset,new Vector3(-1, visible[4] ? -1 : 0, visible[2] ? -1 : 0).normalized, uv+new Vector2(-1,0),3),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + voxelOffset,new Vector3(-1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),3),
-                LoadVertex(new Vector3(i, iii + 1, ii) + voxelOffset,new Vector3(-1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(-1,1),3)
+                LoadVertex(new Vector3(i, iii + scale, ii + scale) + voxelOffset,new Vector3(-1, visible[5] ? 1 : 0, visible[3] ? 1 : 0).normalized,uv+new Vector2(0,1),3),
+                LoadVertex(new Vector3(i, iii + scale, ii) + voxelOffset,new Vector3(-1, visible[5] ? 1 : 0, visible[2] ? -1 : 0).normalized,uv+new Vector2(-1,1),3)
             };
             indices[side[type, 3]].Add(indexes[windingOrder[0]]);
             indices[side[type, 3]].Add(indexes[windingOrder[1]]);
@@ -466,10 +540,10 @@ public class MeshData
             Vector3 n = new Vector3(0, 0, 1);
             Vector2 uv = new Vector2(i + voxelOffset.x, iii + voxelOffset.y);
             ushort[] indexes = {
-                LoadVertex(new Vector3(i + 1, iii, ii + 1) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, 1).normalized,uv+new Vector2(0,0),4),
-                LoadVertex(new Vector3(i, iii, ii + 1) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, 1).normalized, uv+new Vector2(-1,0),4),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii + 1) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(0,1),4),
-                LoadVertex(new Vector3(i, iii + 1, ii + 1) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(-1,1),4)
+                LoadVertex(new Vector3(i + scale, iii, ii + scale) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, 1).normalized,uv+new Vector2(0,0),4),
+                LoadVertex(new Vector3(i, iii, ii + scale) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, 1).normalized, uv+new Vector2(-1,0),4),
+                LoadVertex(new Vector3(i + scale, iii + scale, ii + scale) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(0,1),4),
+                LoadVertex(new Vector3(i, iii + scale, ii + scale) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, 1).normalized,uv+new Vector2(-1,1),4)
             };
             indices[side[type, 4]].Add(indexes[windingOrder[0]]);
             indices[side[type, 4]].Add(indexes[windingOrder[1]]);
@@ -488,9 +562,9 @@ public class MeshData
             Vector2 uv = new Vector2(i + voxelOffset.x, iii + voxelOffset.y);
             ushort[] indexes = {
                 LoadVertex(new Vector3(i, iii, ii) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[4] ? -1 : 0, -1).normalized,uv+new Vector2(0,0),5),
-                LoadVertex(new Vector3(i + 1, iii, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, -1).normalized, uv+new Vector2(1,0),5),
-                LoadVertex(new Vector3(i, iii + 1, ii) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(0,1),5),
-                LoadVertex(new Vector3(i + 1, iii + 1, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(1,1),5)
+                LoadVertex(new Vector3(i + scale, iii, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[4] ? -1 : 0, -1).normalized, uv+new Vector2(1,0),5),
+                LoadVertex(new Vector3(i, iii + scale, ii) + voxelOffset,new Vector3(visible[0] ? -1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(0,1),5),
+                LoadVertex(new Vector3(i + scale, iii + scale, ii) + voxelOffset,new Vector3(visible[1] ? 1 : 0, visible[5] ? 1 : 0, -1).normalized,uv+new Vector2(1,1),5)
             };
             indices[side[type, 5]].Add(indexes[windingOrder[0]]);
             indices[side[type, 5]].Add(indexes[windingOrder[1]]);

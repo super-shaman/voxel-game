@@ -55,7 +55,7 @@ public class TerrainChunk
         {
             for (int ii = 0; ii < size; ii++)
             {
-                float height = GetHeight(index1 * size + i, index2 * size + ii,0)*512;
+                float height = GetHeight(index1 * size + i, index2 * size + ii,0)*(1024-16);
                 minH = height < minH ? height : minH;
                 maxH = height > maxH ? height : maxH;
                 heights[i * size + ii] = height;
@@ -63,33 +63,39 @@ public class TerrainChunk
         }
         maxH = maxH < 0 ? 0 : maxH;
     }
-
+    public double GetOctaveNoise(int o, double x, double y)
+    {
+        double height = 0;
+        double max = 0;
+        double amount = 1;
+        for (int iii = 0; iii < o; iii++)
+        {
+            height += WorldNoise.ValueCoherentNoise3D(x / amount, y / amount, seeder, 0) * amount;
+            seeder++;
+            max += amount;
+            amount *= 2;
+        }
+        height /= max;
+        return height;
+    }
+    int seeder = 0;
     public float GetHeight(double x, double y, int seed)
     {
+        seeder = 0;
+        double a = 1;
+        double aa = 0;
+        int size = 12;
         double h = 0;
-        int a = 0;
-        int am = 1;
-        int seeder = 0;
-        for (int iiii = 1; iiii <= 12; iiii++)
+        for (int i = 1; i <= size; i++)
         {
-            double height = 0;
-            double max = 0;
-            double amount = 1;
-            for (int iii = 0; iii < iiii; iii++)
-            {
-                height += WorldNoise.ValueCoherentNoise3D(x / amount, y / amount, seeder, seed) * amount;
-                seeder++;
-                max += amount;
-                amount *= 2;
-            }
-            height /= max;
-            h += height * am;
-            a += am;
-            am *= 2;
+            h += GetOctaveNoise(i, x, y) * a;
+            aa += a;
+            a *= (GetOctaveNoise(i, x, y)*0.5+2) * 32;
         }
-        h /= a;
-        double minh = Math.Abs(h) < 0.05 ? (h > 0 ? 0.05 : -0.05) : h;
-        h = h > 0.1f ? h * h * (1.0f + 10 * (h - 0.1f)) : h < 0 ? h : h * h * (h * 10) + h * (1.0f - h * 10);
+        h /= aa;
+        double seaHeight = 0.05+(GetOctaveNoise(size-2, x,y)+1)*0.5*0.45;
+        double mountainHeight = 0.5 + (GetOctaveNoise(size-2, x, y) + 1) * 0.5 * 0.5;
+        h = h > seaHeight ? h * h : h < 0 ? h * 0.25 : (h*h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
         return (float)h;
     }
 
@@ -160,7 +166,7 @@ public class TerrainChunk
         for (int i = loadedChunks.Count - 1; i >= 0; i--)
         {
             VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphicsDownFastNoGrass();
+            chunk.LoadGraphicsDownLowQ();
         }
     }
     public void LoadGraphicsUp()
@@ -226,27 +232,27 @@ public class TerrainChunk
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            if (ii == 0)
+            if (ii <= 1)
             {
                 terrain.chunks[3].LoadChunk(iiier);
             }
-            if (ii == size - 1)
+            if (ii >= size - 2)
             {
                 terrain.chunks[5].LoadChunk(iiier);
             }
-            if (i == size - 1)
+            if (i >= size - 2)
             {
                 terrain.chunks[7].LoadChunk(iiier);
             }
-            if (i == 0)
+            if (i <= 1)
             {
                 terrain.chunks[1].LoadChunk(iiier);
             }
-            if (iii == size - 1)
+            if (iii >= size - 2)
             {
                 terrain.LoadChunk(iiier + 1);
             }
-            if (iii == 0)
+            if (iii <= 1)
             {
                 terrain.LoadChunk(iiier - 1);
             }
@@ -255,27 +261,27 @@ public class TerrainChunk
         }else
         {
             chunk = terrain.LoadChunk(iiier);
-            if (ii == 0)
+            if (ii <= 1)
             {
                 terrain.chunks[3].LoadChunk(iiier);
             }
-            if (ii == size - 1)
+            if (ii >= size - 2)
             {
                 terrain.chunks[5].LoadChunk(iiier);
             }
-            if (i == size - 1)
+            if (i >= size - 2)
             {
                 terrain.chunks[7].LoadChunk(iiier);
             }
-            if (i == 0)
+            if (i <= 1)
             {
                 terrain.chunks[1].LoadChunk(iiier);
             }
-            if (iii == size - 1)
+            if (iii >= size - 2)
             {
                 terrain.LoadChunk(iiier + 1);
             }
-            if (iii == 0)
+            if (iii <= 1)
             {
                 terrain.LoadChunk(iiier - 1);
             }
@@ -429,7 +435,7 @@ public class TerrainChunk
                 if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
                 {
                     SpawnTree(i, ii, Mathf.FloorToInt(height));
-                }else if (height > 2 && height < 256 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 1) + 1) * 512+ (WorldNoise.ValueCoherentNoise3D((index1 * size + i)/1000.0, (index2 * size + ii)/1000.0, 1, 1)*0.5f+0.5f) < 1)
+                }else if (height > 32 && height < 256 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 1) + 1) * 512+ (WorldNoise.ValueCoherentNoise3D((index1 * size + i)/1000.0, (index2 * size + ii)/1000.0, 1, 1)*0.5f+0.5f) < 1)
                 {
                     float s = (float)(WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 3) / 2.0 + 0.5);
                     SpawnBigTree(i, ii, Mathf.FloorToInt(height), (int)(s*4.0f)+2, (int)(s*96)+16, 0);

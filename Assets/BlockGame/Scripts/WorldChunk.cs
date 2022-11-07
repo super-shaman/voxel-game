@@ -167,6 +167,17 @@ public class WorldChunk : IComparable
     {
         return structuresLoaded;
     }
+    public bool AreAllStructuresLoaded()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            if (chunks[i].structuresLoaded != 9)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     public bool AreHeightsLoaded()
     {

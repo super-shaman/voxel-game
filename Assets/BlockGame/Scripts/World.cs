@@ -38,7 +38,7 @@ public class World : MonoBehaviour
 
     void Start()
     {
-        /*Color[] colors = new Color[ChunkGraphics.mr.sharedMaterials.Length];
+        Color[] colors = new Color[ChunkGraphics.mr.sharedMaterials.Length];
         for (int i = 0; i < colors.Length; i++)
         {
             Material m = ChunkGraphics.mr.sharedMaterials[i];
@@ -67,6 +67,7 @@ public class World : MonoBehaviour
                 colors[i].a = 1;
             }
         }
+        MeshData.colors = colors;
         int[] types = new int[8 * 8*8];
         for (int i = 0; i < 8; i++)
         {
@@ -119,7 +120,7 @@ public class World : MonoBehaviour
                 same = false;
             }
         }
-        Debug.Log(same);*/
+        Debug.Log(same);
         Chunk.LODSize = LODSize;
         Time.timeScale = 1;
         if (!Application.isEditor)
