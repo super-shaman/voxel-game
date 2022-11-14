@@ -169,6 +169,14 @@ public class TerrainChunk
             chunk.LoadGraphicsDownLowQ();
         }
     }
+    public void LoadGraphicsDownSuperLowQ()
+    {
+        for (int i = loadedChunks.Count - 1; i >= 0; i--)
+        {
+            VoxelChunk chunk = loadedChunks[i];
+            chunk.LoadGraphicsDownSuperLowQ();
+        }
+    }
     public void LoadGraphicsUp()
     {
         for (int i = 0; i < loadedChunks.Count; i++)
@@ -181,6 +189,10 @@ public class TerrainChunk
     public VoxelChunk getVoxelChunk(int iii)
     {
         return voxelChunks[iii + chunkDepth];
+    }
+    public void setVoxelChunk(VoxelChunk vc)
+    {
+        voxelChunks[vc.index3 + chunkDepth] = vc;
     }
 
     VoxelChunk LoadChunk(int iii)
@@ -212,6 +224,32 @@ public class TerrainChunk
         return chunk;
     }
 
+    public void LoadChunk(VoxelChunk chunk, int iii)
+    {
+        if (voxelChunks[chunkDepth + iii] != null)
+        {
+            return;
+        }
+        chunk.Load(index1, index2, iii, this);
+        voxelChunks[chunkDepth + iii] = chunk;
+        loadedChunks.Add(chunk);
+        for (int o = 0; o < 3; o++)
+        {
+            for (int oo = 0; oo < 3; oo++)
+            {
+                for (int ooo = 0; ooo < 3; ooo++)
+                {
+                    VoxelChunk c = chunks[o * 3 + oo].voxelChunks[chunkDepth + chunk.index3 - 1 + ooo];
+                    if (c != null)
+                    {
+                        chunk.chunks[o * 3 * 3 + oo * 3 + ooo] = c;
+                        c.chunks[(2 - o) * 3 * 3 + (2 - oo) * 3 + 2 - ooo] = chunk;
+                    }
+                }
+            }
+        }
+    }
+
     void SetBlock(int i, int ii, int iii, int type)
     {
         int ier = Mathf.FloorToInt((float)i / size);
@@ -232,27 +270,27 @@ public class TerrainChunk
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            if (ii <= 1)
+            if (ii <= 3)
             {
                 terrain.chunks[3].LoadChunk(iiier);
             }
-            if (ii >= size - 2)
+            if (ii >= size - 4)
             {
                 terrain.chunks[5].LoadChunk(iiier);
             }
-            if (i >= size - 2)
+            if (i >= size - 4)
             {
                 terrain.chunks[7].LoadChunk(iiier);
             }
-            if (i <= 1)
+            if (i <= 3)
             {
                 terrain.chunks[1].LoadChunk(iiier);
             }
-            if (iii >= size - 2)
+            if (iii >= size - 4)
             {
                 terrain.LoadChunk(iiier + 1);
             }
-            if (iii <= 1)
+            if (iii <= 3)
             {
                 terrain.LoadChunk(iiier - 1);
             }
@@ -261,27 +299,27 @@ public class TerrainChunk
         }else
         {
             chunk = terrain.LoadChunk(iiier);
-            if (ii <= 1)
+            if (ii <= 3)
             {
                 terrain.chunks[3].LoadChunk(iiier);
             }
-            if (ii >= size - 2)
+            if (ii >= size - 4)
             {
                 terrain.chunks[5].LoadChunk(iiier);
             }
-            if (i >= size - 2)
+            if (i >= size - 4)
             {
                 terrain.chunks[7].LoadChunk(iiier);
             }
-            if (i <= 1)
+            if (i <= 3)
             {
                 terrain.chunks[1].LoadChunk(iiier);
             }
-            if (iii >= size - 2)
+            if (iii >= size - 4)
             {
                 terrain.LoadChunk(iiier + 1);
             }
-            if (iii <= 1)
+            if (iii <= 3)
             {
                 terrain.LoadChunk(iiier - 1);
             }

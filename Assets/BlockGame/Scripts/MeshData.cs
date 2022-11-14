@@ -34,6 +34,7 @@ public class MeshData
         }
     }
     public Vector2Int[] lowResLoader = new Vector2Int[8];
+    public Vector2Int[] superLowResLoader = new Vector2Int[64];
     public int lod = 0;
     public static int maxVertices = 65000;
     public void Unload()

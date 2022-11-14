@@ -7,15 +7,16 @@ public class VoxelChunk : IComparable
     public int index1;
     public int index2;
     public int index3;
-    byte size;
+    protected byte size;
 
-    byte[] types;
+    public byte[] types;
     public VoxelChunk[] chunks = new VoxelChunk[3 * 3 * 3];
-    TerrainChunk terrain;
+    protected TerrainChunk terrain;
 
     public static Vector3Int[] loadOrder;
     public static Vector3Int[] loadOrderReverse;
     int memindex = 0;
+    protected byte chunkType = 0;
 
     public int CompareTo(object obj)
     {
@@ -23,15 +24,23 @@ public class VoxelChunk : IComparable
         return index3.CompareTo(other.index3);
     }
 
+    public int getChunkType()
+    {
+        return chunkType;
+    }
+
     public int getMemIndex()
     {
         return memindex;
     }
 
-    public VoxelChunk(byte size, int memIndex)
+    public VoxelChunk(byte size, int memIndex, bool initMem)
     {
         this.size = size;
-        types = new byte[size * size * size];
+        if (initMem)
+        {
+            types = new byte[size * size * size];
+        }
         memindex = memIndex;
     }
 
@@ -79,7 +88,7 @@ public class VoxelChunk : IComparable
         }
     }
 
-    public int GetTypeFast(int i, int ii, int iii)
+    public byte GetTypeFast(int i, int ii, int iii)
     {
         return types[i * size * size + ii * size + iii];
     }
@@ -138,6 +147,11 @@ public class VoxelChunk : IComparable
     {
         if (MeshData.solid[types[i * size * size + ii * size + iii]]) return;
         types[i * size * size + ii * size + iii] = (byte)type;
+    }
+
+    public void SetTypeFast(int i, int type)
+    {
+        types[i] = (byte)type;
     }
 
 
@@ -284,27 +298,6 @@ public class VoxelChunk : IComparable
             }
         }
     }
-
-    public Vector4 GetLowResData(Vector3Int vv)
-    {
-        Vector4 v = new Vector4();
-        for (int i = 0; i < 2; i++)
-        {
-            for (int ii = 0; ii < 2; ii++)
-            {
-                for (int iii = 0; iii < 2; iii++)
-                {
-                    int type = GetType(vv.x + i, vv.y + ii, vv.z + iii);
-                    if (type != 0)
-                    {
-                        v.w += 1;
-                    }
-                }
-            }
-        }
-        return v;
-    }
-    
     
     public void LoadGraphicsDownLowQ()
     {
@@ -548,5 +541,248 @@ public class VoxelChunk : IComparable
             }
         }
     }
-    
+
+    public void LoadGraphicsDownSuperLowQ()
+    {
+        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        md.scale = 4.0f;
+        if (md.offset.magnitude == 0)
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = md.voxelOffset;
+            md.voxelOffset = new Vector3();
+        }
+        else
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.voxelOffset -= md.offset;
+        }
+        for (int i = size / 4 - 1; i >= 0; i--)
+        {
+            for (int ii = size / 4 - 1; ii >= 0; ii--)
+            {
+                for (int iii = size / 4 - 1; iii >= 0; iii--)
+                {
+                    Vector3Int v = new Vector3Int(i * 4, ii * 4, iii * 4);
+                    if (md.vertices.Count > MeshData.maxVertices - 36)
+                    {
+                        terrain.worldChunk.meshData.Add(World.world.GetMeshData());
+                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                        md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                        md.voxelOffset *= size;
+                        md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                        md.offset = md.voxelOffset;
+                        md.voxelOffset = new Vector3();
+                        md.scale = 4.0f;
+                    }
+                    Vector3Int vvv = v;
+                    for (int o = 0; o < 64; o++)
+                    {
+                        md.superLowResLoader[o].x = -1;
+                        md.superLowResLoader[o].y = 0;
+                    }
+                    for (int o = 0; o < 4; o++)
+                    {
+                        for (int oo = 0; oo < 4; oo++)
+                        {
+                            for (int ooo = 0; ooo < 4; ooo++)
+                            {
+                                Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                int t = GetType(vv.x, vv.y, vv.z);
+                                int a = md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1));
+                                if (t > 0 && MeshData.blockShape[t] == 0 && a != 0)
+                                {
+                                    md.superLowResLoader[o * 16 + oo * 4 + ooo].x = t;
+                                    md.superLowResLoader[o * 16 + oo * 4 + ooo].y += a;
+                                }
+                            }
+                        }
+                    }
+                    int type = -1;
+                    int aa = 0;
+                    for (int o = 0; o < 64; o++)
+                    {
+                        Vector2Int vv = md.superLowResLoader[o];
+                        for (int oo = o + 1; oo < 64; oo++)
+                        {
+                            Vector2Int vver = md.superLowResLoader[oo];
+                            if (vv.x == vver.x)
+                            {
+                                vv.y += vver.y;
+                                vver.x = -1;
+                            }
+                        }
+                    }
+                    for (int o = 0; o < 64; o++)
+                    {
+                        Vector2Int vv = md.superLowResLoader[o];
+                        if (vv.x != -1 && vv.y > aa)
+                        {
+                            if (type == vv.x)
+                            {
+                                aa += vv.y;
+                            }
+                            else
+                            {
+                                type = vv.x;
+                                aa = vv.y;
+                            }
+                        }
+                    }
+                    if (type >= 0)
+                    {
+                        int left = -1;
+                        vvv = v + new Vector3Int(-4, 0, 0);
+                        for (int o = 0; o < 4; o++)
+                        {
+                            for (int oo = 0; oo < 4; oo++)
+                            {
+                                for (int ooo = 0; ooo < 4; ooo++)
+                                {
+                                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                    int t = GetType(vv.x, vv.y, vv.z);
+                                    if (t != -1 && left == -1 && MeshData.fastSolid[t])
+                                    {
+                                        left = t;
+                                    }
+                                    if (t > 0 && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                                    {
+                                        left = t;
+                                        o = 4;
+                                        oo = 4;
+                                        ooo = 4;
+                                    }
+                                }
+                            }
+                        }
+                        int right = -1;
+                        vvv = v + new Vector3Int(4, 0, 0);
+                        for (int o = 0; o < 4; o++)
+                        {
+                            for (int oo = 0; oo < 4; oo++)
+                            {
+                                for (int ooo = 0; ooo < 4; ooo++)
+                                {
+                                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                    int t = GetType(vv.x, vv.y, vv.z);
+                                    if (t != -1 && right == -1 && MeshData.fastSolid[t])
+                                    {
+                                        right = t;
+                                    }
+                                    if (t > 0 && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                                    {
+                                        right = t;
+                                        o = 4;
+                                        oo = 4;
+                                        ooo = 4;
+                                    }
+                                }
+                            }
+                        }
+                        int back = -1;
+                        vvv = v + new Vector3Int(0, -4, 0);
+                        for (int o = 0; o < 4; o++)
+                        {
+                            for (int oo = 0; oo < 4; oo++)
+                            {
+                                for (int ooo = 0; ooo < 4; ooo++)
+                                {
+                                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                    int t = GetType(vv.x, vv.y, vv.z);
+                                    if (t != -1 && back == -1 && MeshData.fastSolid[t])
+                                    {
+                                        back = t;
+                                    }
+                                    if (t > 0 && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                                    {
+                                        back = t;
+                                        o = 4;
+                                        oo = 4;
+                                        ooo = 4;
+                                    }
+                                }
+                            }
+                        }
+                        int front = -1;
+                        vvv = v + new Vector3Int(0, 4, 0);
+                        for (int o = 0; o < 4; o++)
+                        {
+                            for (int oo = 0; oo < 4; oo++)
+                            {
+                                for (int ooo = 0; ooo < 4; ooo++)
+                                {
+                                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                    int t = GetType(vv.x, vv.y, vv.z);
+                                    if (t != -1 && front == -1 && MeshData.fastSolid[t])
+                                    {
+                                        front = t;
+                                    }
+                                    if (t > 0 && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                                    {
+                                        front = t;
+                                        o = 4;
+                                        oo = 4;
+                                        ooo = 4;
+                                    }
+                                }
+                            }
+                        }
+                        int bottom = -1;
+                        vvv = v + new Vector3Int(0, 0, -4);
+                        for (int o = 0; o < 4; o++)
+                        {
+                            for (int oo = 0; oo < 4; oo++)
+                            {
+                                for (int ooo = 0; ooo < 4; ooo++)
+                                {
+                                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                    int t = GetType(vv.x, vv.y, vv.z);
+                                    if (t != -1 && bottom == -1 && MeshData.fastSolid[t])
+                                    {
+                                        bottom = t;
+                                    }
+                                    if (t > 0 && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                                    {
+                                        bottom = t;
+                                        o = 4;
+                                        oo = 4;
+                                        ooo = 4;
+                                    }
+                                }
+                            }
+                        }
+                        int top = -1;
+                        vvv = v + new Vector3Int(0, 0, 4);
+                        for (int o = 0; o < 4; o++)
+                        {
+                            for (int oo = 0; oo < 4; oo++)
+                            {
+                                for (int ooo = 0; ooo < 4; ooo++)
+                                {
+                                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                    int t = GetType(vv.x, vv.y, vv.z);
+                                    if (t != -1 && top == -1 && MeshData.fastSolid[t])
+                                    {
+                                        top = t;
+                                    }
+                                    if (t > 0 && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                                    {
+                                        top = t;
+                                        o = 4;
+                                        oo = 4;
+                                        ooo = 4;
+                                    }
+                                }
+                            }
+                        }
+                        md.LoadVoxelFast(v, type, left, right, back, front, bottom, top);
+                    }
+                }
+            }
+        }
+    }
 }

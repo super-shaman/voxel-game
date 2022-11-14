@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Threading;
-
+using System.IO;
 
 public class WorldChunk : IComparable
 {
@@ -15,16 +15,22 @@ public class WorldChunk : IComparable
     int heightsLoaded = 0;
     int chunksLoaded = 0;
     int structuresLoaded = 0;
+    int graphicsLoaded = 0;
     bool areHeightsLoaded = false;
     bool areChunksLoaded = false;
     bool areStructuresLoaded = false;
+    public bool areGraphicsLoaded = false;
     public bool unloading;
+    public bool compressed = false;
     public WorldChunk[] chunks = new WorldChunk[3 * 3];
 
     public List<Chunk> graphics = new List<Chunk>();
     public List<MeshData> meshData = new List<MeshData>();
     public int size = 0;
     public static Vector2Int pos;
+    public static Vector2Int[] loadOrder;
+    public static Vector2Int[] loadOrderReverse;
+    public byte lodLevel = 255;
 
     public WorldChunk(int size, int wcs, int index1, int index2)
     {
@@ -61,6 +67,7 @@ public class WorldChunk : IComparable
         heightsLoaded = 0;
         chunksLoaded = 0;
         structuresLoaded = 0;
+        lodLevel = 255;
         for (int i = 0; i < 3; i++)
         {
             for (int ii = 0; ii < 3; ii++)
@@ -119,6 +126,10 @@ public class WorldChunk : IComparable
                     {
                         chunk.chunksLoaded -= chunk.chunksLoaded <= 0 ? 0 : 1;
                     }
+                    if (areGraphicsLoaded)
+                    {
+                        chunk.graphicsLoaded -= chunk.graphicsLoaded <= 0 ? 0 : 1;
+                    }
                     if (areStructuresLoaded && chunk.areStructuresLoaded)
                     {
                         for (int iii = 0; iii < 3; iii++)
@@ -126,7 +137,15 @@ public class WorldChunk : IComparable
                             for (int iiii = 0; iiii < 3; iiii++)
                             {
                                 WorldChunk wc = chunk.chunks[iii * 3 + iiii];
-                                wc.structuresLoaded -= !(wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii) ? 0 : wc.structuresLoaded <= 0 ? 0 : 1;
+                                if (wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)
+                                {
+                                    wc.structuresLoaded -= wc.structuresLoaded <= 0 ? 0 : 1;
+                                    if (wc.compressed)
+                                    {
+                                        wc.LoadFromDisk();
+                                        wc.Decompress();
+                                    }
+                                }
                             }
                         }
                         chunk.areStructuresLoaded = false;
@@ -138,13 +157,17 @@ public class WorldChunk : IComparable
                 }
             }
         }
+        saved = false;
         heightsLoaded = 0;
         chunksLoaded = 0;
         structuresLoaded = 0;
+        graphicsLoaded = 0;
         areHeightsLoaded = false;
         areChunksLoaded = false;
         areStructuresLoaded = false;
-        graphicsLoaded = false;
+        areGraphicsLoaded = false;
+        compressed = false;
+        NeedsToLoad = false;
         for (int i = 0; i < worldChunkSize; i++)
         {
             for (int ii = 0; ii < worldChunkSize; ii++)
@@ -155,18 +178,49 @@ public class WorldChunk : IComparable
         StructuresFinished = false;
     }
 
-    public int HeightsLoaded()
+    public bool CanLoad()
     {
-        return heightsLoaded;
+        for (int i = 0; i < 9; i++)
+        {
+            if (chunks[i].compressed)
+            {
+                return false;
+            }
+        }
+        return true;
     }
-    public int ChunksLoaded()
+    public bool NeedsToLoad = false;
+    public bool MakeLoadable()
     {
-        return chunksLoaded;
+        for (int i = 0; i < 3; i++)
+        {
+            for (int ii = 0; ii < 3; ii++)
+            {
+                if ((chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii))
+                {
+                    chunks[i * 3 + ii].NeedsToLoad = true;
+                    if (chunks[i * 3 + ii].compressed)
+                    {
+                        chunks[i * 3 + ii].LoadFromDisk();
+                        chunks[i * 3 + ii].Decompress();
+                    }
+                }
+            }
+        }
+        return true;
     }
-    public int StructuresLoaded()
+    public bool Loading()
     {
-        return structuresLoaded;
+        for (int i = 0; i < 9; i++)
+        {
+            if (chunks[i].loading)
+            {
+                return true;
+            }
+        }
+        return false;
     }
+
     public bool AreAllStructuresLoaded()
     {
         for (int i = 0; i < 9; i++)
@@ -192,18 +246,53 @@ public class WorldChunk : IComparable
         return areStructuresLoaded;
     }
 
+    public int HeightsLoaded()
+    {
+        return heightsLoaded;
+    }
+    public int ChunksLoaded()
+    {
+        return chunksLoaded;
+    }
+    public int StructuresLoaded()
+    {
+        return structuresLoaded;
+    }
+    public int GraphicsLoaded()
+    {
+        return graphicsLoaded;
+    }
+
     public Thread thread;
     public bool done = false;
     public bool loading;
 
     public void AddHeights()
     {
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 9; i++)
         {
-            for (int ii = 0; ii < 3; ii++)
-            {
-                chunks[i * 3 + ii].heightsLoaded++;
-            }
+            chunks[i].heightsLoaded++;
+        }
+    }
+    public void AddChunks()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            chunks[i].chunksLoaded++;
+        }
+    }
+    public void AddStructures()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            chunks[i].structuresLoaded++;
+        }
+    }
+    public void AddGraphics()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            chunks[i].graphicsLoaded++;
         }
     }
 
@@ -236,13 +325,6 @@ public class WorldChunk : IComparable
         done = true;
     }
 
-    public void AddChunks()
-    {
-        for (int i = 0; i < 9; i++)
-        {
-            chunks[i].chunksLoaded++;
-        }
-    }
 
     public void LoadChunks()
     {
@@ -267,13 +349,6 @@ public class WorldChunk : IComparable
         }
     }
 
-    public void AddStructures()
-    {
-        for (int i = 0; i < 9; i++)
-        {
-            chunks[i].structuresLoaded++;
-        }
-    }
     public bool AreStructuresLoading()
     {
         for (int i = 0; i < 9; i++)
@@ -300,10 +375,245 @@ public class WorldChunk : IComparable
         loading = false;
     }
 
-    public static Vector2Int[] loadOrder;
-    public static Vector2Int[] loadOrderReverse;
-    public bool graphicsLoaded = false;
-    public byte lodLevel = 0;
+
+
+    static byte[] compressor = new byte[258];
+    static int compressorCount = 0;
+    public bool CompressChunk(VoxelChunk vc)
+    {
+        byte prev = 0;
+        byte a = 0;
+        for (int i = 0; i < size; i++)
+        {
+            for (int ii = 0; ii < size; ii++)
+            {
+                for (int iii = 0; iii < size; iii++)
+                {
+                    byte t = vc.GetTypeFast(i, ii, iii);
+                    if (a == 0)
+                    {
+                        prev = t;
+                        a++;
+                    }
+                    else if (prev == t)
+                    {
+                        a++;
+                    }
+                    else
+                    {
+                        compressor[compressorCount] = prev;
+                        compressor[compressorCount+1] = a;
+                        compressorCount += 2;
+                        prev = t;
+                        a = 1;
+                    }
+                    if (a == 255)
+                    {
+                        compressor[compressorCount] = prev;
+                        compressor[compressorCount + 1] = a;
+                        compressorCount += 2;
+                        prev = t;
+                        a = 0;
+                    }
+                    if (compressorCount >= 256)
+                    {
+                        compressorCount = 0;
+                        return false;
+                    }
+                }
+            }
+        }
+        if (a > 0)
+        {
+            compressor[compressorCount] = prev;
+            compressor[compressorCount + 1] = a;
+            compressorCount += 2;
+        }
+        return true;
+    }
+    public void DecompressChunk(VoxelChunk vc)
+    {
+        int aa = 0;
+        for (int i = 0; i < compressorCount; i += 2)
+        {
+            int t = compressor[i];
+            int a = compressor[i + 1];
+            for (int ii = 0; ii < a; ii++)
+            {
+                vc.SetTypeFast(aa, t);
+                aa++;
+            }
+        }
+    }
+    static FileStream fs;
+    bool saved = false;
+    static byte[] byteArray = new byte[8 * 8*8 * 4];
+    static int[] IntBuffer = new int[1];
+
+    public void SaveToDisk()
+    {
+        if (!File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
+        {
+            fs = File.Create("worldSave/data" + index1 + "_" + index2 + ".bin");
+            for (int i = 0; i < worldChunkSize; i++)
+            {
+                for (int ii = 0; ii < worldChunkSize; ii++)
+                {
+                    TerrainChunk tc = terrains[i, ii];
+                    Buffer.BlockCopy(tc.heights, 0, byteArray, 0, 8*8*4);
+                    fs.Write(byteArray,0,8*8*4);
+                    IntBuffer[0] = tc.loadedChunks.Count;
+                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                    fs.Write(byteArray, 0, 4);
+
+                    for (int iii = 0; iii < tc.loadedChunks.Count; iii++)
+                    {
+                        VoxelChunk vc = tc.loadedChunks[iii];
+                        if (CompressChunk(vc))
+                        {
+                            fs.WriteByte(1);
+                            IntBuffer[0] = compressorCount;
+                            Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                            fs.Write(byteArray, 0, 4);
+                            IntBuffer[0] = vc.index3;
+                            Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                            fs.Write(byteArray, 0, 4);
+                            fs.Write(compressor, 0, compressorCount);
+                            compressorCount = 0;
+                        }else
+                        {
+
+                            fs.WriteByte(0);
+                            IntBuffer[0] = vc.index3;
+                            Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                            fs.Write(byteArray, 0, 4);
+                            fs.Write(vc.types, 0, vc.types.Length);
+                        }
+                    }
+                    tc.Unload();
+                }
+            }
+            fs.Close();
+        }else
+        {
+            for (int i = 0; i < worldChunkSize; i++)
+            {
+                for (int ii = 0; ii < worldChunkSize; ii++)
+                {
+                    TerrainChunk tc = terrains[i, ii];
+                    tc.Unload();
+                }
+            }
+        }
+        saved = true;
+        compressed = true;
+    }
+
+    public void LoadFromDisk()
+    {
+        if (File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
+        {
+            fs = File.OpenRead("worldSave/data" + index1 + "_" + index2 + ".bin");
+            for (int i = 0; i < worldChunkSize; i++)
+            {
+                for (int ii = 0; ii < worldChunkSize; ii++)
+                {
+                    TerrainChunk tc = terrains[i, ii];
+                    fs.Read(byteArray, 0, 8 * 8 * 4);
+                    Buffer.BlockCopy(byteArray, 0, tc.heights, 0, 8 * 8 * 4);
+                    IntBuffer[0] = tc.loadedChunks.Count;
+                    fs.Read(byteArray, 0, 4);
+                    Buffer.BlockCopy(byteArray, 0, IntBuffer, 0, 4);
+                    int c = IntBuffer[0];
+                    for (int iii = 0; iii < c; iii++)
+                    {
+                        int t = fs.ReadByte();
+                        VoxelChunk vc = World.world.GetVoxelChunk();
+                        int len = 8 * 8 * 8;
+                        if (t == 1)
+                        {
+                            fs.Read(byteArray, 0, 4);
+                            Buffer.BlockCopy(byteArray, 0, IntBuffer, 0, 4);
+                            len = IntBuffer[0];
+                            fs.Read(byteArray, 0, 4);
+                            Buffer.BlockCopy(byteArray, 0, IntBuffer, 0, 4);
+                            int h = IntBuffer[0];
+                            fs.Read(compressor, 0, len);
+                            compressorCount = len;
+                            DecompressChunk(vc);
+                            compressorCount = 0;
+                            tc.LoadChunk(vc, h);
+                        }
+                        else
+                        {
+                            fs.Read(byteArray, 0, 4);
+                            Buffer.BlockCopy(byteArray, 0, IntBuffer, 0, 4);
+                            int h = IntBuffer[0];
+                            fs.Read(vc.types, 0, len);
+                            tc.LoadChunk(vc, h);
+                        }
+                    }
+                }
+            }
+            fs.Close();
+        }
+        saved = false;
+        compressed = false;
+    }
+
+    public void Compress()
+    {
+
+        compressed = true;
+        /*for (int i = 0; i < loadOrderReverse.Length; i++)
+        {
+            Vector2Int v = loadOrderReverse[i];
+            TerrainChunk tc = terrains[v.x, v.y];
+            for (int ii = 0; ii < tc.loadedChunks.Count; ii++)
+            {
+                VoxelChunk vc = tc.loadedChunks[ii];
+                if (CompressChunk(vc))
+                {
+                    RLEVoxelChunk rlevc = World.world.GetRLEVoxelChunk();
+                    rlevc.Load(vc.index1, vc.index2, vc.index3, tc, compressor.ToArray(), vc);
+                    compressor.Clear();
+                    tc.loadedChunks[ii] = rlevc;
+                    tc.setVoxelChunk(rlevc);
+                    vc.Unload();
+                    World.world.UnloadVoxelChunk(vc);
+                }
+            }
+           
+        }*/
+    }
+
+    public void Decompress()
+    {
+
+        /*for (int i = 0; i < loadOrderReverse.Length; i++)
+        {
+            Vector2Int v = loadOrderReverse[i];
+            TerrainChunk tc = terrains[v.x, v.y];
+            for (int ii = 0; ii < tc.loadedChunks.Count; ii++)
+            {
+                VoxelChunk vc = tc.loadedChunks[ii];
+                if (vc.getChunkType() == 1)
+                {
+                    RLEVoxelChunk rlevc = (RLEVoxelChunk)vc;
+                    VoxelChunk vvc = World.world.GetVoxelChunk();
+                    vvc.Load(rlevc.index1, rlevc.index2, rlevc.index3, tc);
+                    rlevc.Decompress(vvc);
+                    tc.loadedChunks[ii] = vvc;
+                    tc.setVoxelChunk(vvc);
+                    vc.Unload();
+                    World.world.UnloadVoxelChunk(vc);
+                }
+            }
+
+        }*/
+        compressed = false;
+    }
+
 
     public void LoadGraphics()
     {
@@ -323,8 +633,10 @@ public class WorldChunk : IComparable
             meshData[i].Normalize();
         }
         lodLevel = 0;
-        graphicsLoaded = true;
+        areGraphicsLoaded = true;
         done = true;
+        loading = false;
+        NeedsToLoad = false;
     }
     public void LoadGraphicsNoGrass()
     {
@@ -344,9 +656,36 @@ public class WorldChunk : IComparable
             meshData[i].Normalize();
         }
         lodLevel = 1;
-        graphicsLoaded = true;
+        areGraphicsLoaded = true;
         done = true;
+        loading = false;
+        NeedsToLoad = false;
     }
+
+    public void LoadGraphicsSuperLowQ()
+    {
+        for (int i = 0; i < loadOrderReverse.Length; i++)
+        {
+            Vector2Int v = loadOrderReverse[i];
+            terrains[v.x, v.y].SortVoxelChunks();
+            terrains[v.x, v.y].LoadGraphicsDownSuperLowQ();
+        }
+        /*for (int i = 0; i < loadOrder.Length; i++)
+        {
+            Vector2Int v = loadOrder[i];
+            terrains[v.x, v.y].LoadGraphicsUp();
+        }*/
+        for (int i = 0; i < meshData.Count; i++)
+        {
+            meshData[i].Normalize();
+        }
+        lodLevel = 2;
+        areGraphicsLoaded = true;
+        done = true;
+        loading = false;
+        NeedsToLoad = false;
+    }
+
     // cool physics
 
     private static byte[] PhysicsBlock =
@@ -398,7 +737,7 @@ public class WorldChunk : IComparable
             terrain = terrain == null ? chunks[ier * 3 + iier] : terrain.chunks[ier * 3 + iier];
         }
         p.chunk = terrain;
-        if (!terrain.graphicsLoaded)
+        if (!terrain.areGraphicsLoaded | !terrain.CanLoad())
         {
             return;
         }
