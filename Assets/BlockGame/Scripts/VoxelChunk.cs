@@ -154,7 +154,6 @@ public class VoxelChunk : IComparable
         types[i] = (byte)type;
     }
 
-
     public void LoadGraphicsUpFast()
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
@@ -249,6 +248,7 @@ public class VoxelChunk : IComparable
             }
         }
     }
+
     public void LoadGraphicsDownFastNoGrass()
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];

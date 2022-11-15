@@ -110,7 +110,6 @@ public class WorldChunk : IComparable
 
     public void Unload()
     {
-        unloading = true;
         for (int i = 0; i < 3; i++)
         {
             for (int ii = 0; ii < 3; ii++)
@@ -140,7 +139,7 @@ public class WorldChunk : IComparable
                                 if (wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)
                                 {
                                     wc.structuresLoaded -= wc.structuresLoaded <= 0 ? 0 : 1;
-                                    if (wc.compressed)
+                                    if (wc.compressed && !wc.unloading)
                                     {
                                         wc.LoadFromDisk();
                                         wc.Decompress();
@@ -263,6 +262,16 @@ public class WorldChunk : IComparable
         return graphicsLoaded;
     }
 
+    public void FinishChunk()
+    {
+        AddHeights();
+        AddChunks();
+        areStructuresLoaded = false;
+        areHeightsLoaded = true;
+        areChunksLoaded = true;
+
+    }
+
     public Thread thread;
     public bool done = false;
     public bool loading;
@@ -304,6 +313,21 @@ public class WorldChunk : IComparable
             {
 
                 if (!(chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii))
+                {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    public bool Saved()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            for (int ii = 0; ii < 3; ii++)
+            {
+
+                if (!chunks[i * 3 + ii].saved)
                 {
                     return false;
                 }
@@ -446,7 +470,7 @@ public class WorldChunk : IComparable
         }
     }
     static FileStream fs;
-    bool saved = false;
+    public bool saved = false;
     static byte[] byteArray = new byte[8 * 8*8 * 4];
     static int[] IntBuffer = new int[1];
 
@@ -505,11 +529,10 @@ public class WorldChunk : IComparable
                 }
             }
         }
-        saved = true;
         compressed = true;
     }
 
-    public void LoadFromDisk()
+    public bool LoadFromDisk()
     {
         if (File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
         {
@@ -556,9 +579,15 @@ public class WorldChunk : IComparable
                 }
             }
             fs.Close();
+            saved = true;
+            compressed = false;
+            return true;
+        }else
+        {
+            saved = true;
+            compressed = false;
+            return false;
         }
-        saved = false;
-        compressed = false;
     }
 
     public void Compress()

@@ -419,6 +419,28 @@ public class World : MonoBehaviour
         {
             for (int ii = 0; ii < worldChunkLoadSize; ii++)
             {
+                int ier = GetIndex(i + chunkIndex.x);
+                int iier = GetIndex(ii + chunkIndex.y);
+                WorldChunk chunk = worldChunks[ier, iier];
+                int index1 = chunk.index1;
+                int index2 = chunk.index2;
+                bool should = false;
+                if (index1 != chunkIndex.x - worldChunkLoadSize / 2 + i | index2 != chunkIndex.y - worldChunkLoadSize / 2 + ii)
+                {
+                    index1 = chunkIndex.x - worldChunkLoadSize / 2 + i;
+                    index2 = chunkIndex.y - worldChunkLoadSize / 2 + ii;
+                    should = true;
+                }
+                if (should ? should : (new Vector2Int(index1, index2) - chunkIndex).magnitude > worldChunkLoadSize / 2)
+                {
+                    chunk.unloading = true;
+                }
+            }
+        }
+        for (int i = 0; i < worldChunkLoadSize; i++)
+        {
+            for (int ii = 0; ii < worldChunkLoadSize; ii++)
+            {
                 int ier = GetIndex(i+chunkIndex.x);
                 int iier =  GetIndex(ii+chunkIndex.y);
                 WorldChunk chunk = worldChunks[ier, iier];
@@ -567,8 +589,8 @@ public class World : MonoBehaviour
             }
             RepositionGraphics = true;
             MoveNeeded = false;
-            addGraphics = true;
             AddGraphics = true;
+            addGraphics = true;
         }
         if (!AddGraphics)
         {
@@ -588,6 +610,30 @@ public class World : MonoBehaviour
                     break;
                 }
                 if (!wc.CanLoadHeights() | (new Vector2Int(wc.index1, wc.index2) - chunkIndex).magnitude >= worldChunkLoadSize / 2.0f)
+                {
+                    continue;
+                }
+                if (!wc.saved && wc.LoadFromDisk())
+                {
+                    wc.Decompress();
+                    wc.FinishChunk();
+                    structuresToLoad.Add(wc);
+                    heightsToLoad.RemoveAt(i);
+                    heightsLoaded++;
+                }
+            }
+            for (int i = heightsToLoad.Count - 1; i >= 0; i--)
+            {
+                WorldChunk wc = heightsToLoad[i];
+                if (wc.unloading)
+                {
+                    wc.unloading = false;
+                }
+                if (heightsLoaded >= 30)
+                {
+                    break;
+                }
+                if (!wc.CanLoadHeights() | !wc.Saved() | (new Vector2Int(wc.index1, wc.index2) - chunkIndex).magnitude >= worldChunkLoadSize / 2.0f)
                 {
                     continue;
                 }
@@ -739,7 +785,6 @@ public class World : MonoBehaviour
                     wc.LoadStructures();
                     reloadStructures.RemoveAt(i);
                 }
-
             }
             structuresToLoad.Sort();
             for (int i = structuresToLoad.Count - 1; i >= 0; i--)
@@ -808,10 +853,16 @@ public class World : MonoBehaviour
                 wc.NeedsToLoad = false;
 
             }
+            graphicsGrass.Sort();
+            int c = 0;
             for (int i = graphicsGrass.Count - 1; i >= 0; i--)
             {
                 WorldChunk wc = graphicsGrass[i];
 
+                if (c >= maxThreads)
+                {
+                    break;
+                }
                 if (!(wc.CanLoadHeights() && wc.StructuresLoaded() == 9))
                 {
                     continue;
@@ -822,6 +873,7 @@ public class World : MonoBehaviour
                     if (wc.lodLevel != 0)
                     {
                         wc.MakeLoadable();
+                        c++;
                     }
                 }
                 else if (dist < GrassDistance * 2)
@@ -829,6 +881,7 @@ public class World : MonoBehaviour
                     if (wc.lodLevel != 1)
                     {
                         wc.MakeLoadable();
+                        c++;
                     }
                 }
                 else
@@ -836,10 +889,10 @@ public class World : MonoBehaviour
                     if (wc.lodLevel != 2)
                     {
                         wc.MakeLoadable();
+                        c++;
                     }
                 }
             }
-            rleVoxelIndexPool.Sort((x, y) => y.CompareTo(x));
             for (int i = graphicsGrass.Count - 1; i >= 0; i--)
             {
                 WorldChunk wc = graphicsGrass[i];
@@ -850,7 +903,7 @@ public class World : MonoBehaviour
                 }
                 if (wc.GraphicsLoaded() == 9 && !wc.NeedsToLoad)
                 {
-                    if ((new Vector2Int(wc.index1 * worldChunkSizer, wc.index2 * worldChunkSizer) - pos).magnitude > GrassDistance + worldChunkSizer * 2)
+                    if ((new Vector2Int(wc.index1 * worldChunkSizer, wc.index2 * worldChunkSizer) - pos).magnitude > 256 + worldChunkSizer * 2)
                     {
                         if (!wc.compressed)
                         {
@@ -876,12 +929,20 @@ public class World : MonoBehaviour
         if (meshDataPool.Count == meshDataLoaded)
         {
             loadingGraphics.Sort();
-            for (int i = 0; i < maxThreads; i++)
+            int amount = 0;
+            for (int i = loadingGraphics.Count-1; i >= 0; i--)
             {
-                int index = loadingGraphics.Count - 1;
-                WorldChunk closest = loadingGraphics.Count > 0 ? loadingGraphics[index] : null;
-                if (closest != null && closest.CanLoadHeights() && closest.StructuresLoaded() == 9)
+                if (amount >= maxThreads)
                 {
+                    break;
+                }
+                WorldChunk closest = loadingGraphics[i];
+                if (closest != null && closest.CanLoadHeights() && closest.StructuresLoaded() == 9 && closest.CanLoad())
+                {
+                    if (amount >= maxThreads)
+                    {
+                        break;
+                    }
                     closest.meshData.Add(GetMeshData());
                     closest.AddGraphics();
                     float dist = (new Vector2Int(closest.index1 * worldChunkSizer, closest.index2 * worldChunkSizer) - pos).magnitude;
@@ -892,7 +953,8 @@ public class World : MonoBehaviour
                         thread.Start();
                         graphicsThreads.Add(thread);
                         loadGraphics.Add(closest);
-                        loadingGraphics.RemoveAt(index);
+                        loadingGraphics.RemoveAt(i);
+                        amount++;
                     }
                     else if (dist < GrassDistance*2)
                     {
@@ -901,15 +963,18 @@ public class World : MonoBehaviour
                         thread.Start();
                         graphicsThreads.Add(thread);
                         loadGraphics.Add(closest);
-                        loadingGraphics.RemoveAt(index);
-                    }else
+                        loadingGraphics.RemoveAt(i);
+                        amount++;
+                    }
+                    else
                     {
                         closest.loading = true;
                         Thread thread = new Thread(closest.LoadGraphicsSuperLowQ);
                         thread.Start();
                         graphicsThreads.Add(thread);
                         loadGraphics.Add(closest);
-                        loadingGraphics.RemoveAt(index);
+                        loadingGraphics.RemoveAt(i);
+                        amount++;
                     }
                 }
             }
@@ -918,9 +983,7 @@ public class World : MonoBehaviour
                 graphicsThreads[i].Join();
             }
             graphicsThreads.Clear();
-            graphicsGrass.Sort();
-            
-            int amount = 0;
+            amount = 0;
             for (int i = graphicsGrass.Count-1; i >= 0; i--)
             {
                 if (amount >= maxThreads)
