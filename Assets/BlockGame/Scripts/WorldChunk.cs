@@ -107,7 +107,7 @@ public class WorldChunk : IComparable
     }
 
     public bool StructuresFinished;
-
+    public bool structuresReloading = false;
     public void Unload()
     {
         for (int i = 0; i < 3; i++)
@@ -148,7 +148,7 @@ public class WorldChunk : IComparable
                             }
                         }
                         chunk.areStructuresLoaded = false;
-                        if (chunk.StructuresFinished)
+                        if (chunk.StructuresFinished && !chunk.unloading)
                         {
                             World.world.ReloadStructures(chunk);
                         }
@@ -167,6 +167,7 @@ public class WorldChunk : IComparable
         areGraphicsLoaded = false;
         compressed = false;
         NeedsToLoad = false;
+        structuresReloading = false;
         for (int i = 0; i < worldChunkSize; i++)
         {
             for (int ii = 0; ii < worldChunkSize; ii++)
@@ -195,13 +196,14 @@ public class WorldChunk : IComparable
         {
             for (int ii = 0; ii < 3; ii++)
             {
-                if ((chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii))
+                WorldChunk wc = chunks[i * 3 + ii];
+                if ((wc.index1 == index1 - 1 + i && wc.index2 == index2 - 1 + ii) && wc.CanLoadHeights() && wc.StructuresLoaded() == 9)
                 {
-                    chunks[i * 3 + ii].NeedsToLoad = true;
-                    if (chunks[i * 3 + ii].compressed)
+                    wc.NeedsToLoad = true;
+                    if (wc.compressed)
                     {
-                        chunks[i * 3 + ii].LoadFromDisk();
-                        chunks[i * 3 + ii].Decompress();
+                        wc.LoadFromDisk();
+                        wc.Decompress();
                     }
                 }
             }
