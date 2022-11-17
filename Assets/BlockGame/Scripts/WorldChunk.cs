@@ -115,6 +115,21 @@ public class WorldChunk : IComparable
                 WorldChunk chunk = chunks[i * 3 + ii];
                 if (chunk.index1 == index1-1+i && chunk.index2 == index2 - 1 + ii)
                 {
+                    for (int iii = 0; iii < 3; iii++)
+                    {
+                        for (int iiii = 0; iiii < 3; iiii++)
+                        {
+                            WorldChunk wc = chunk.chunks[iii * 3 + iiii];
+                            if (wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)
+                            {
+                                if (wc.compressed && !wc.unloading)
+                                {
+                                    wc.LoadFromDisk();
+                                    wc.Decompress();
+                                }
+                            }
+                        }
+                    }
                     if (areHeightsLoaded)
                     {
                         chunk.heightsLoaded -= chunk.heightsLoaded <= 0 ? 0 : 1;
@@ -133,11 +148,6 @@ public class WorldChunk : IComparable
                                 if (wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)
                                 {
                                     wc.structuresLoaded -= wc.structuresLoaded <= 0 ? 0 : 1;
-                                    if (wc.compressed && !wc.unloading)
-                                    {
-                                        wc.LoadFromDisk();
-                                        wc.Decompress();
-                                    }
                                 }
                             }
                         }
