@@ -44,24 +44,16 @@ public class TerrainChunk
     }
 
 
-    float minH;
-    float maxH;
-
     public void LoadHeights()
     {
-        minH = float.MaxValue;
-        maxH = float.MinValue;
         for (int i = 0; i < size; i++)
         {
             for (int ii = 0; ii < size; ii++)
             {
                 float height = GetHeight(index1 * size + i, index2 * size + ii,0)*(1024-16);
-                minH = height < minH ? height : minH;
-                maxH = height > maxH ? height : maxH;
                 heights[i * size + ii] = height;
             }
         }
-        maxH = maxH < 0 ? 0 : maxH;
     }
     public double GetOctaveNoise(int o, double x, double y)
     {
@@ -97,55 +89,6 @@ public class TerrainChunk
         double mountainHeight = 0.5 + (GetOctaveNoise(size-2, x, y) + 1) * 0.5 * 0.5;
         h = h > seaHeight ? h * h : h < 0 ? h * 0.25 : (h*h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
         return (float)h;
-    }
-
-    public void LoadVoxelChunks()
-    {
-        float minH = this.minH;
-        float maxH = this.maxH;
-        for (int i = 0; i < 3; i++)
-        {
-            for (int ii = 0; ii < 3; ii++)
-            {
-                TerrainChunk chunk = chunks[i * 3 + ii];
-                minH = chunk.minH < minH ? chunk.minH : minH;
-                maxH = chunk.maxH > maxH ? chunk.maxH : maxH;
-            }
-        }
-        int minIndex = Mathf.FloorToInt(minH / size);
-        int maxIndex = Mathf.CeilToInt(maxH / size);
-        minIndex = minIndex < -chunkDepth ? -chunkDepth : minIndex;
-        maxIndex = maxIndex > chunkHeight ? chunkHeight : maxIndex;
-        for (int i = minIndex; i <= maxIndex; i++)
-        {
-            VoxelChunk chunk = World.world.GetVoxelChunk();
-            chunk.Load(index1, index2, i, this);
-            voxelChunks[chunkDepth + i] = chunk;
-            loadedChunks.Add(chunk);
-            for (int o = 0; o < 3; o++)
-            {
-                for (int oo = 0; oo < 3; oo++)
-                {
-                    for (int ooo = 0; ooo < 3; ooo++)
-                    {
-                        VoxelChunk c = chunks[o * 3 + oo].voxelChunks[chunkDepth + chunk.index3 - 1 + ooo];
-                        if (c != null)
-                        {
-                            chunk.chunks[o * 3 * 3 + oo * 3 + ooo] = c;
-                            c.chunks[(2 - o) * 3 * 3 + (2 - oo) * 3 + 2 - ooo] = chunk;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    public void LoadChunks()
-    {
-        for (int i = 0; i < loadedChunks.Count; i++)
-        {
-            loadedChunks[i].LoadVoxels();
-        }
     }
 
     public void SortVoxelChunks()
@@ -327,6 +270,82 @@ public class TerrainChunk
         }
     }
 
+    void LoadBlock(int i, int ii, int iii)
+    {
+        int ier = Mathf.FloorToInt((float)i / size);
+        int iier = Mathf.FloorToInt((float)ii / size);
+        int iiier = Mathf.FloorToInt((float)iii / size);
+        i -= ier * size;
+        ii -= iier * size;
+        iii -= iiier * size;
+        TerrainChunk terrain = this;
+        while (ier != 0 | iier != 0)
+        {
+            int oer = (ier > 0 ? 2 : ier < 0 ? 0 : 1);
+            int ooer = (iier > 0 ? 2 : iier < 0 ? 0 : 1);
+            terrain = terrain.chunks[oer * 3 + ooer];
+            ier -= oer - 1;
+            iier -= ooer - 1;
+        }
+        VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
+        if (chunk != null)
+        {
+            if (ii <= 3)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 4)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 4)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i <= 3)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 4)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii <= 3)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+            
+        }
+        else
+        {
+            chunk = terrain.LoadChunk(iiier);
+            if (ii <= 3)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 4)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 4)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i <= 3)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 4)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii <= 3)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+        }
+    }
+
     public int GetBlock(int i, int ii, int iii)
     {
         int iiier = Mathf.FloorToInt((float)iii / size);
@@ -358,6 +377,25 @@ public class TerrainChunk
         {
             return 0;
         }
+    }
+
+    public int GetHeight(int i, int ii)
+    {
+        int ier = Mathf.FloorToInt((float)i / size);
+        int iier = Mathf.FloorToInt((float)ii / size);
+
+        i -= ier * size;
+        ii -= iier * size;
+        TerrainChunk terrain = this;
+        while (ier != 0 | iier != 0)
+        {
+            int oer = (ier > 0 ? 2 : ier < 0 ? 0 : 1);
+            int ooer = (iier > 0 ? 2 : iier < 0 ? 0 : 1);
+            terrain = terrain.chunks[oer * 3 + ooer];
+            ier -= oer - 1;
+            iier -= ooer - 1;
+        }
+        return Mathf.FloorToInt(terrain.heights[ier*size+ iier]);
     }
 
     void SpawnTree(int i, int ii, int h)
@@ -469,7 +507,29 @@ public class TerrainChunk
         {
             for (int ii = 0; ii < size; ii++)
             {
-                float height = heights[i * size + ii];
+                int height = Mathf.FloorToInt(heights[i * size + ii]);
+                if (height < 0)
+                {
+                    int h = Mathf.CeilToInt(height);
+                    for (int iii = 0; iii < -h; iii++)
+                    {
+                        LoadBlock(i, ii, -iii);
+                    }
+                }else
+                {
+                    int h = GetHeight(i - 1, ii);
+                    int hh = height-h > 1 ? height-h : 1;
+                    h = GetHeight(i + 1, ii);
+                    hh = height-h > hh ? height-h : hh;
+                    h = GetHeight(i, ii-1);
+                    hh = height - h > hh ? height - h : hh;
+                    h = GetHeight(i, ii+1);
+                    hh = height - h > hh ? height - h : hh;
+                    for (int iii = 0; iii < hh; iii++)
+                    {
+                        LoadBlock(i, ii, -iii);
+                    }
+                }
                 if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
                 {
                     SpawnTree(i, ii, Mathf.FloorToInt(height));

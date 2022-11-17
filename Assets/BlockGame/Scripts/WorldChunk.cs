@@ -10,23 +10,28 @@ public class WorldChunk : IComparable
     public int index1;
     public int index2;
     int worldChunkSize;
+    public int size = 0;
     TerrainChunk[,] terrains;
     public int indexOffset = 0;
     int heightsLoaded = 0;
-    int chunksLoaded = 0;
     int structuresLoaded = 0;
     int graphicsLoaded = 0;
     bool areHeightsLoaded = false;
-    bool areChunksLoaded = false;
-    bool areStructuresLoaded = false;
+    public bool areStructuresLoaded = false;
     public bool areGraphicsLoaded = false;
     public bool unloading;
     public bool compressed = false;
+    public bool StructuresFinished;
+    public bool structuresReloading = false;
+    public bool NeedsToLoad = false;
+    public bool saved = false;
+    public bool loadedFromDisk = false;
+
     public WorldChunk[] chunks = new WorldChunk[3 * 3];
 
     public List<Chunk> graphics = new List<Chunk>();
     public List<MeshData> meshData = new List<MeshData>();
-    public int size = 0;
+
     public static Vector2Int pos;
     public static Vector2Int[] loadOrder;
     public static Vector2Int[] loadOrderReverse;
@@ -65,7 +70,6 @@ public class WorldChunk : IComparable
         this.index1 = index1;
         this.index2 = index2;
         heightsLoaded = 0;
-        chunksLoaded = 0;
         structuresLoaded = 0;
         lodLevel = 255;
         for (int i = 0; i < 3; i++)
@@ -78,10 +82,6 @@ public class WorldChunk : IComparable
                     if (chunks[i * 3 + ii].AreHeightsLoaded())
                     {
                         heightsLoaded++;
-                    }
-                    if (chunks[i * 3 + ii].AreChunksLoaded())
-                    {
-                        chunksLoaded++;
                     }
                     if (chunks[i * 3 + ii].AreStructuresLoaded())
                     {
@@ -106,8 +106,6 @@ public class WorldChunk : IComparable
         terrain.worldChunk = this;
     }
 
-    public bool StructuresFinished;
-    public bool structuresReloading = false;
     public void Unload()
     {
         for (int i = 0; i < 3; i++)
@@ -120,10 +118,6 @@ public class WorldChunk : IComparable
                     if (areHeightsLoaded)
                     {
                         chunk.heightsLoaded -= chunk.heightsLoaded <= 0 ? 0 : 1;
-                    }
-                    if (areChunksLoaded)
-                    {
-                        chunk.chunksLoaded -= chunk.chunksLoaded <= 0 ? 0 : 1;
                     }
                     if (areGraphicsLoaded)
                     {
@@ -158,16 +152,15 @@ public class WorldChunk : IComparable
         }
         saved = false;
         heightsLoaded = 0;
-        chunksLoaded = 0;
         structuresLoaded = 0;
         graphicsLoaded = 0;
         areHeightsLoaded = false;
-        areChunksLoaded = false;
         areStructuresLoaded = false;
         areGraphicsLoaded = false;
         compressed = false;
         NeedsToLoad = false;
         structuresReloading = false;
+        loadedFromDisk = false;
         for (int i = 0; i < worldChunkSize; i++)
         {
             for (int ii = 0; ii < worldChunkSize; ii++)
@@ -189,7 +182,17 @@ public class WorldChunk : IComparable
         }
         return true;
     }
-    public bool NeedsToLoad = false;
+    public bool allLoadedFromDisk()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            if (!chunks[i].loadedFromDisk)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
     public bool MakeLoadable()
     {
         for (int i = 0; i < 3; i++)
@@ -238,10 +241,6 @@ public class WorldChunk : IComparable
     {
         return areHeightsLoaded;
     }
-    public bool AreChunksLoaded()
-    {
-        return areChunksLoaded;
-    }
     public bool AreStructuresLoaded()
     {
         return areStructuresLoaded;
@@ -250,10 +249,6 @@ public class WorldChunk : IComparable
     public int HeightsLoaded()
     {
         return heightsLoaded;
-    }
-    public int ChunksLoaded()
-    {
-        return chunksLoaded;
     }
     public int StructuresLoaded()
     {
@@ -267,10 +262,8 @@ public class WorldChunk : IComparable
     public void FinishChunk()
     {
         AddHeights();
-        AddChunks();
         areStructuresLoaded = false;
         areHeightsLoaded = true;
-        areChunksLoaded = true;
 
     }
 
@@ -283,13 +276,6 @@ public class WorldChunk : IComparable
         for (int i = 0; i < 9; i++)
         {
             chunks[i].heightsLoaded++;
-        }
-    }
-    public void AddChunks()
-    {
-        for (int i = 0; i < 9; i++)
-        {
-            chunks[i].chunksLoaded++;
         }
     }
     public void AddStructures()
@@ -351,30 +337,6 @@ public class WorldChunk : IComparable
         done = true;
     }
 
-
-    public void LoadChunks()
-    {
-        for (int i = 0; i < worldChunkSize; i++)
-        {
-            for (int ii = 0; ii < worldChunkSize; ii++)
-            {
-                terrains[i, ii].LoadChunks();
-            }
-        }
-        areChunksLoaded = true;
-        done = true;
-    }
-    public void LoadVoxelChunks()
-    {
-        for (int i = 0; i < worldChunkSize; i++)
-        {
-            for (int ii = 0; ii < worldChunkSize; ii++)
-            {
-                terrains[i, ii].LoadVoxelChunks();
-            }
-        }
-    }
-
     public bool AreStructuresLoading()
     {
         for (int i = 0; i < 9; i++)
@@ -405,6 +367,7 @@ public class WorldChunk : IComparable
 
     static byte[] compressor = new byte[258];
     static int compressorCount = 0;
+
     public bool CompressChunk(VoxelChunk vc)
     {
         byte prev = 0;
@@ -471,8 +434,8 @@ public class WorldChunk : IComparable
             }
         }
     }
+
     static FileStream fs;
-    public bool saved = false;
     static byte[] byteArray = new byte[8 * 8*8 * 4];
     static int[] IntBuffer = new int[1];
 
@@ -583,6 +546,7 @@ public class WorldChunk : IComparable
             fs.Close();
             saved = true;
             compressed = false;
+            loadedFromDisk = true;
             return true;
         }else
         {

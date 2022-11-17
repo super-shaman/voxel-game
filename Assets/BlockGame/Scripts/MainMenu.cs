@@ -42,6 +42,16 @@ public class MainMenu : MonoBehaviour
         }
     }
 
+    public void Quit()
+    {
+        if (!Application.isEditor)
+        {
+            System.Diagnostics.Process.GetCurrentProcess().Close();
+            System.Diagnostics.Process.GetCurrentProcess().Kill();
+
+        }
+    }
+
     public static int loadSize = 4;
 
     public void SetViewDistance()
