@@ -453,7 +453,11 @@ public class WorldChunk : IComparable
     {
         if (!File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
         {
-            fs = File.Create("worldSave/data" + index1 + "_" + index2 + ".bin");
+            fs = new FileStream("worldSave/data" + index1 + "_" + index2 + ".bin", FileMode.Create, FileAccess.Write);
+            while (!fs.CanWrite)
+            {
+                Thread.Sleep(1);
+            }
             for (int i = 0; i < worldChunkSize; i++)
             {
                 for (int ii = 0; ii < worldChunkSize; ii++)
@@ -511,7 +515,11 @@ public class WorldChunk : IComparable
     {
         if (File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
         {
-            fs = File.OpenRead("worldSave/data" + index1 + "_" + index2 + ".bin");
+            fs = new FileStream("worldSave/data" + index1 + "_" + index2 + ".bin", FileMode.Open, FileAccess.Read);
+            while (!fs.CanRead)
+            {
+                Thread.Sleep(1);
+            }
             for (int i = 0; i < worldChunkSize; i++)
             {
                 for (int ii = 0; ii < worldChunkSize; ii++)
