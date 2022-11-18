@@ -490,7 +490,7 @@ public class World : MonoBehaviour
         previousChunkIndex = chunkIndex;
         chunkMover = new Vector2Int();
     }
-
+    
     Vector2Int currentPlayerPos = new Vector2Int();
     Vector2Int previousChunkMover = new Vector2Int(int.MaxValue, int.MaxValue);
     int threader = 0;
@@ -615,7 +615,7 @@ public class World : MonoBehaviour
                 {
                     wc.unloading = false;
                 }
-                if (heightsLoaded >= 30)
+                if (heightsLoaded >= 32)
                 {
                     break;
                 }
@@ -634,8 +634,9 @@ public class World : MonoBehaviour
                 }
                 if (!wc.AreHeightsLoaded())
                 {
-                    wc.AddHeights();
                     heightsLoaded++;
+                    structuresToLoad.Add(wc);
+                    heightsToLoad.RemoveAt(i);
                     if (loadingChunks.Count < maxThreads - threadOffset)
                     {
                         wc.done = false;
@@ -662,16 +663,6 @@ public class World : MonoBehaviour
                         wc.thread.Start();
                         loadingChunks.Add(wc);
                     }
-                    if (wc.HeightsLoaded() == 9)
-                    {
-                        structuresToLoad.Add(wc);
-                        heightsToLoad.RemoveAt(i);
-                    }
-                }
-                else if (wc.HeightsLoaded() == 9)
-                {
-                    structuresToLoad.Add(wc);
-                    heightsToLoad.RemoveAt(i);
                 }
             }
             for (int ii = 0; ii < loadingChunks.Count; ii++)
@@ -679,15 +670,6 @@ public class World : MonoBehaviour
                 loadingChunks[ii].thread.Join();
             }
             loadingChunks.Clear();
-            for (int i = heightsToLoad.Count - 1; i >= 0; i--)
-            {
-                WorldChunk wc = heightsToLoad[i];
-                if (wc.HeightsLoaded() == 9)
-                {
-                    structuresToLoad.Add(wc);
-                    heightsToLoad.RemoveAt(i);
-                }
-            }
             reloadStructures.Sort();
             for (int i = reloadStructures.Count - 1; i >= 0; i--)
             {
@@ -696,7 +678,7 @@ public class World : MonoBehaviour
                 {
                     continue;
                 }
-                if (!wc.CanLoadHeights() | wc.HeightsLoaded() != 9)
+                if (!wc.CanLoadHeights() | !wc.CanLoadStructures())
                 {
                     continue;
                 }
@@ -720,7 +702,7 @@ public class World : MonoBehaviour
                 {
                     continue;
                 }
-                if (!wc.CanLoadHeights() | wc.HeightsLoaded() != 9)
+                if (!wc.CanLoadHeights() | !wc.CanLoadStructures())
                 {
                     continue;
                 }
@@ -785,10 +767,6 @@ public class World : MonoBehaviour
                     loadingGraphics.Add(wc);
                     worldsToLoad.RemoveAt(i);
                 }
-            }
-            if (loadGraphics.Count > 0)
-            {
-                loadGraphics.Sort();
             }
             for (int i = graphicsGrass.Count - 1; i >= 0; i--)
             {
@@ -882,26 +860,35 @@ public class World : MonoBehaviour
                 {
                     continue;
                 }
-                if (wc.GraphicsLoaded() == 9 && !wc.NeedsToLoad)
+                if (wc.GraphicsLoaded() == 9)
                 {
                     if ((new Vector2Int(wc.index1 * worldChunkSizer, wc.index2 * worldChunkSizer) - pos).magnitude > 256 + worldChunkSizer * 2)
                     {
-                        if (!wc.compressed)
+                        if (!wc.compressed && !wc.NeedsToLoad)
                         {
                             wc.Compress();
                             wc.SaveToDisk();
+                            continue;
                         }
-                    }else
+                    }
+                }
+                if ((new Vector2Int(wc.index1 * worldChunkSizer, wc.index2 * worldChunkSizer) - pos).magnitude > 256 + worldChunkSizer * 2)
+                {
+                }
+                else
+                {
+                    if (wc.compressed)
                     {
-                        if (wc.compressed)
-                        {
-                            wc.LoadFromDisk();
-                            wc.Decompress();
-                        }
+                        wc.LoadFromDisk();
+                        wc.Decompress();
                     }
                 }
             }
             voxelIndexPool.Sort((x, y) => y.CompareTo(x));
+            if (loadingGraphics.Count < 32)
+            {
+                AddGraphics = false;
+            }
         }
         for (int i = 0; i < unloadMeshData.Count; i++)
         {
@@ -911,6 +898,7 @@ public class World : MonoBehaviour
         }
         unloadMeshData.Clear();
         int amount = 0;
+        loadingGraphics.Sort();
         for (int i = loadingGraphics.Count - 1; i >= 0; i--)
         {
             if (amount >= maxThreads)
@@ -965,6 +953,7 @@ public class World : MonoBehaviour
             AddGraphics = false;
         }
         amount = 0;
+        graphicsGrass.Sort();
         for (int i = graphicsGrass.Count - 1; i >= 0; i--)
         {
             if (amount >= maxThreads)
