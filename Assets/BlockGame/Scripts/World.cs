@@ -129,7 +129,7 @@ public class World : MonoBehaviour
         Time.timeScale = 1;
         if (!Application.isEditor)
         {
-            GarbageCollector.incrementalTimeSliceNanoseconds = 100000;
+            GarbageCollector.incrementalTimeSliceNanoseconds = 0;
         }
         LoadLoadOrder();
         LoadWorld();
@@ -158,13 +158,7 @@ public class World : MonoBehaviour
 
     public void UnloadVoxelChunk(VoxelChunk chunk)
     {
-        if (chunk.getChunkType() == 0)
-        {
-            voxelIndexPool.Add(chunk.getMemIndex());
-        }else
-        {
-            rleVoxelIndexPool.Add(chunk.getMemIndex());
-        }
+        voxelIndexPool.Add(chunk.getMemIndex());
     }
 
     public VoxelChunk GetVoxelChunk()
@@ -183,29 +177,7 @@ public class World : MonoBehaviour
             return chunk;
         }
     }
-
-    List<RLEVoxelChunk> rleVoxelPool = new List<RLEVoxelChunk>();
-    List<int> rleVoxelIndexPool = new List<int>();
     
-
-    public RLEVoxelChunk GetRLEVoxelChunk()
-    {
-        if (rleVoxelIndexPool.Count == 0)
-        {
-            RLEVoxelChunk v = new RLEVoxelChunk(size, rleVoxelPool.Count, false);
-            rleVoxelPool.Add(v);
-            return v;
-        }
-        else
-        {
-            int ind = rleVoxelIndexPool[rleVoxelIndexPool.Count - 1];
-            rleVoxelIndexPool.RemoveAt(rleVoxelIndexPool.Count - 1);
-            RLEVoxelChunk chunk = rleVoxelPool[ind];
-            return chunk;
-        }
-    }
-
-
     List<WorldChunk> reloadStructures = new List<WorldChunk>();
     public void ReloadStructures(WorldChunk wc)
     {
@@ -237,55 +209,6 @@ public class World : MonoBehaviour
         }
         TerrainChunk.sphere = spherePos.ToArray();
         System.Array.Sort(TerrainChunk.sphere, (x, y) => x.magnitude.CompareTo(y.magnitude));
-        Vector2Int[] v = new Vector2Int[size * size];
-        for (int i = 0; i < size; i++)
-        {
-            for (int ii = 0; ii < size; ii++)
-            {
-                v[i * size + ii] = new Vector2Int(i, ii);
-            }
-        }
-        VoxelChunk.loadOrder = new Vector3Int[size * size * size];
-        for (int i = 0; i < size*size; i++)
-        {
-            Vector2Int vv = v[i];
-            for (int ii = 0; ii < size; ii++)
-            {
-                VoxelChunk.loadOrder[i * size + ii] = new Vector3Int(vv.x,vv.y, ii);
-            }
-        }
-        for (int i = 0; i < size; i++)
-        {
-            for (int ii = 0; ii < size; ii++)
-            {
-                v[i * size + ii] = new Vector2Int(size-1-i, size-1-ii);
-            }
-        }
-        VoxelChunk.loadOrderReverse = new Vector3Int[size * size * size];
-        for (int i = 0; i < size * size; i++)
-        {
-            Vector2Int vv = v[i];
-            for (int ii = 0; ii < size; ii++)
-            {
-                VoxelChunk.loadOrderReverse[i * size + ii] = new Vector3Int(vv.x, vv.y, size-1-ii);
-            }
-        }
-        WorldChunk.loadOrder = new Vector2Int[worldChunkSize * worldChunkSize];
-        for (int i = 0; i < worldChunkSize; i++)
-        {
-            for (int ii = 0; ii < worldChunkSize; ii++)
-            {
-                WorldChunk.loadOrder[i * worldChunkSize + ii] = new Vector2Int(i, ii);
-            }
-        }
-        WorldChunk.loadOrderReverse = new Vector2Int[worldChunkSize * worldChunkSize];
-        for (int i = 0; i < worldChunkSize; i++)
-        {
-            for (int ii = 0; ii < worldChunkSize; ii++)
-            {
-                WorldChunk.loadOrderReverse[i * worldChunkSize + ii] = new Vector2Int(worldChunkSize-1-i, worldChunkSize-1-ii);
-            }
-        }
     }
 
     //Initializing World
@@ -520,7 +443,6 @@ public class World : MonoBehaviour
             chunkIndex += new Vector2Int(chunkMover.x, chunkMover.y);
             MoveChunks();
             voxelIndexPool.Sort((x, y) => y.CompareTo(x));
-            rleVoxelIndexPool.Sort((x, y) => y.CompareTo(x));
             WorldChunk.ReverseSort = true;
             reloadStructures.Sort();
             loadingGraphics.Sort();
@@ -1085,12 +1007,19 @@ public class World : MonoBehaviour
     public bool paused = false;
     bool RepositionGraphics;
     bool AddGraphics = false;
+    float garbageTimer = 0;
 
     void RunGame()
     {
         if (paused)
         {
             return;
+        }
+        garbageTimer += Time.deltaTime;
+        if (garbageTimer >= 10)
+        {
+            //GarbageCollector.CollectIncremental(0);
+            garbageTimer = 0;
         }
         int fpser = (int)(1f / Time.unscaledDeltaTime);
         fpsAverage += fpser;

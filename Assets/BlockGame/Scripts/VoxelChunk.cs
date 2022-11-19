@@ -12,9 +12,7 @@ public class VoxelChunk : IComparable
     public byte[] types;
     public VoxelChunk[] chunks = new VoxelChunk[3 * 3 * 3];
     protected TerrainChunk terrain;
-
-    public static Vector3Int[] loadOrder;
-    public static Vector3Int[] loadOrderReverse;
+    
     int memindex = 0;
     protected byte chunkType = 0;
 
@@ -153,44 +151,7 @@ public class VoxelChunk : IComparable
     {
         types[i] = (byte)type;
     }
-
-    public void LoadGraphicsUpFast()
-    {
-        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-        if (md.offset.magnitude == 0)
-        {
-            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-            md.voxelOffset *= size;
-            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-            md.offset = md.voxelOffset;
-            md.voxelOffset = new Vector3();
-        } else
-        {
-            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-            md.voxelOffset *= size;
-            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-            md.voxelOffset -= md.offset;
-        }
-        for (int i = 0; i < loadOrder.Length; i++)
-        {
-            Vector3Int v = loadOrder[i];
-            if (md.vertices.Count > MeshData.maxVertices)
-            {
-                terrain.worldChunk.meshData.Add(World.world.GetMeshData());
-                md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-                md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
-                md.voxelOffset *= size;
-                md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
-                md.offset = md.voxelOffset;
-                md.voxelOffset = new Vector3();
-            }
-            int type = types[v.x * size * size + v.y * size + v.z];
-            if (type != 0)
-            {
-            }
-        }
-    }
-
+    
     public void LoadGraphicsDownFast()
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
@@ -779,6 +740,179 @@ public class VoxelChunk : IComparable
                                 }
                             }
                         }
+                        md.LoadVoxelFast(v, type, left, right, back, front, bottom, top);
+                    }
+                }
+            }
+        }
+    }
+
+    int GetBlockScaled(int scale, Vector3Int vvv, ref MeshData md)
+    {
+        for (int o = 0; o < scale * scale * scale; o++)
+        {
+            md.supersuperLowResLoader[o].x = -1;
+            md.supersuperLowResLoader[o].y = 0;
+        }
+        for (int o = 0; o < scale; o++)
+        {
+            for (int oo = 0; oo < scale; oo++)
+            {
+                for (int ooo = 0; ooo < scale; ooo++)
+                {
+                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                    int t = GetType(vv.x, vv.y, vv.z);
+                    int a = t == -1 ? 0 : md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1));
+                    if (t > 0 && MeshData.blockShape[t] == 0 && a != 0)
+                    {
+                        md.supersuperLowResLoader[o * scale * scale + oo * scale + ooo].x = t;
+                        md.supersuperLowResLoader[o * scale * scale + oo * scale + ooo].y += a;
+                    }
+                }
+            }
+        }
+        int type = -1;
+        int aa = 0;
+        for (int o = 0; o < scale * scale * scale; o++)
+        {
+            Vector2Int vv = md.supersuperLowResLoader[o];
+            for (int oo = o + 1; oo < scale * scale * scale; oo++)
+            {
+                Vector2Int vver = md.supersuperLowResLoader[oo];
+                if (vv.x == vver.x)
+                {
+                    vv.y += vver.y;
+                    vver.x = -1;
+                }
+            }
+        }
+        for (int o = 0; o < scale * scale * scale; o++)
+        {
+            Vector2Int vv = md.supersuperLowResLoader[o];
+            if (vv.x > 0 && vv.y > aa)
+            {
+                type = vv.x;
+                aa = vv.y;
+            }
+        }
+        if (type == -1)
+        {
+
+            for (int o = 0; o < scale; o++)
+            {
+                for (int oo = 0; oo < scale; oo++)
+                {
+                    for (int ooo = 0; ooo < scale; ooo++)
+                    {
+                        Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                        int t = GetType(vv.x, vv.y, vv.z);
+                        if (t > 0 && !MeshData.fastSolid[t] && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
+                        {
+                            return type;
+                        }
+                        if (t != -1 && type == -1 && MeshData.fastSolid[t])
+                        {
+                            type = t;
+                        }
+                    }
+                }
+            }
+        }
+        return type;
+    }
+
+    public void LoadGraphicsDownSuperSuperLowQ(int scale)
+    {
+        MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        md.scale = scale;
+        if (md.offset.magnitude == 0)
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.offset = md.voxelOffset;
+            md.voxelOffset = new Vector3();
+        }
+        else
+        {
+            md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+            md.voxelOffset *= size;
+            md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+            md.voxelOffset -= md.offset;
+        }
+        for (int i = size / scale - 1; i >= 0; i--)
+        {
+            for (int ii = size / scale - 1; ii >= 0; ii--)
+            {
+                for (int iii = size / scale - 1; iii >= 0; iii--)
+                {
+                    Vector3Int v = new Vector3Int(i * scale, ii * scale, iii * scale);
+                    if (md.vertices.Count > MeshData.maxVertices - 36)
+                    {
+                        terrain.worldChunk.meshData.Add(World.world.GetMeshData());
+                        md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+                        md.voxelOffset = new Vector3(index1 - terrain.worldChunk.index1 * World.world.worldChunkSize, index3, index2 - terrain.worldChunk.index2 * World.world.worldChunkSize);
+                        md.voxelOffset *= size;
+                        md.voxelOffset -= new Vector3(World.world.worldChunkSize * size / 2.0f, 0, World.world.worldChunkSize * size / 2.0f);
+                        md.offset = md.voxelOffset;
+                        md.voxelOffset = new Vector3();
+                        md.scale = scale;
+                    }
+                    Vector3Int vvv = v;
+                    for (int o = 0; o < scale*scale*scale; o++)
+                    {
+                        md.supersuperLowResLoader[o].x = -1;
+                        md.supersuperLowResLoader[o].y = 0;
+                    }
+                    for (int o = 0; o < scale; o++)
+                    {
+                        for (int oo = 0; oo < scale; oo++)
+                        {
+                            for (int ooo = 0; ooo < scale; ooo++)
+                            {
+                                Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                                int t = GetType(vv.x, vv.y, vv.z);
+                                int a = md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1));
+                                if (t > 0 && MeshData.blockShape[t] == 0 && a != 0)
+                                {
+                                    md.supersuperLowResLoader[o * scale*scale + oo * scale + ooo].x = t;
+                                    md.supersuperLowResLoader[o * scale*scale + oo * scale + ooo].y += a;
+                                }
+                            }
+                        }
+                    }
+                    int type = -1;
+                    int aa = 0;
+                    for (int o = 0; o < scale*scale*scale; o++)
+                    {
+                        Vector2Int vv = md.supersuperLowResLoader[o];
+                        for (int oo = o + 1; oo < scale * scale * scale; oo++)
+                        {
+                            Vector2Int vver = md.supersuperLowResLoader[oo];
+                            if (vv.x == vver.x)
+                            {
+                                vv.y += vver.y;
+                                vver.x = -1;
+                            }
+                        }
+                    }
+                    for (int o = 0; o < scale * scale * scale; o++)
+                    {
+                        Vector2Int vv = md.supersuperLowResLoader[o];
+                        if (vv.x > 0 && vv.y > aa)
+                        {
+                            type = vv.x;
+                            aa = vv.y;
+                        }
+                    }
+                    if (type >= 0)
+                    {
+                        int left = GetBlockScaled(scale, vvv + new Vector3Int(-scale, 0, 0), ref md);
+                        int right = GetBlockScaled(scale, vvv + new Vector3Int(scale, 0, 0), ref md);
+                        int back = GetBlockScaled(scale, vvv + new Vector3Int(0, -scale, 0), ref md);
+                        int front = GetBlockScaled(scale, vvv + new Vector3Int(0, scale, 0), ref md);
+                        int bottom = GetBlockScaled(scale, vvv + new Vector3Int(0, 0, -scale), ref md);
+                        int top = GetBlockScaled(scale, vvv + new Vector3Int(0, 0, scale), ref md);
                         md.LoadVoxelFast(v, type, left, right, back, front, bottom, top);
                     }
                 }

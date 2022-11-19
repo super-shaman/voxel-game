@@ -32,8 +32,6 @@ public class WorldChunk : IComparable
     public List<MeshData> meshData = new List<MeshData>();
 
     public static Vector2Int pos;
-    public static Vector2Int[] loadOrder;
-    public static Vector2Int[] loadOrderReverse;
     public byte lodLevel = 255;
 
     public WorldChunk(int size, int wcs, int index1, int index2)
@@ -629,17 +627,15 @@ public class WorldChunk : IComparable
 
     public void LoadGraphics()
     {
-        for (int i = 0; i < loadOrderReverse.Length; i++)
+        for (int i = worldChunkSize - 1; i >= 0; i--)
         {
-            Vector2Int v = loadOrderReverse[i];
-            terrains[v.x, v.y].SortVoxelChunks();
-            terrains[v.x, v.y].LoadGraphicsDown();
+            for (int ii = worldChunkSize - 1; ii >= 0; ii--)
+            {
+                TerrainChunk t = terrains[i, ii];
+                t.SortVoxelChunks();
+                t.LoadGraphicsClose();
+            }
         }
-        /*for (int i = 0; i < loadOrder.Length; i++)
-        {
-            Vector2Int v = loadOrder[i];
-            terrains[v.x, v.y].LoadGraphicsUp();
-        }*/
         for (int i = 0; i < meshData.Count; i++)
         {
             meshData[i].Normalize();
@@ -652,11 +648,14 @@ public class WorldChunk : IComparable
     }
     public void LoadGraphicsNoGrass()
     {
-        for (int i = 0; i < loadOrderReverse.Length; i++)
+        for (int i = worldChunkSize - 1; i >= 0; i--)
         {
-            Vector2Int v = loadOrderReverse[i];
-            terrains[v.x, v.y].SortVoxelChunks();
-            terrains[v.x, v.y].LoadGraphicsDownNoGrass();
+            for (int ii = worldChunkSize - 1; ii >= 0; ii--)
+            {
+                TerrainChunk t = terrains[i, ii];
+                t.SortVoxelChunks();
+                t.LoadGraphicsDownNoGrass();
+            }
         }
         /*for (int i = 0; i < loadOrder.Length; i++)
         {
@@ -676,11 +675,14 @@ public class WorldChunk : IComparable
 
     public void LoadGraphicsSuperLowQ()
     {
-        for (int i = 0; i < loadOrderReverse.Length; i++)
+        for (int i = worldChunkSize - 1; i >= 0; i--)
         {
-            Vector2Int v = loadOrderReverse[i];
-            terrains[v.x, v.y].SortVoxelChunks();
-            terrains[v.x, v.y].LoadGraphicsDownSuperLowQ();
+            for (int ii = worldChunkSize - 1; ii >= 0; ii--)
+            {
+                TerrainChunk t = terrains[i, ii];
+                t.SortVoxelChunks();
+                t.LoadGraphicsDownSuperLowQ();
+            }
         }
         /*for (int i = 0; i < loadOrder.Length; i++)
         {

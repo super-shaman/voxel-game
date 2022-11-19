@@ -96,7 +96,7 @@ public class TerrainChunk
         loadedChunks.Sort();
     }
 
-    public void LoadGraphicsDown()
+    public void LoadGraphicsClose()
     {
         for (int i = loadedChunks.Count - 1; i >= 0; i--)
         {
@@ -109,7 +109,7 @@ public class TerrainChunk
         for (int i = loadedChunks.Count - 1; i >= 0; i--)
         {
             VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphicsDownLowQ();
+            chunk.LoadGraphicsDownSuperSuperLowQ(2);
         }
     }
     public void LoadGraphicsDownSuperLowQ()
@@ -117,15 +117,7 @@ public class TerrainChunk
         for (int i = loadedChunks.Count - 1; i >= 0; i--)
         {
             VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphicsDownSuperLowQ();
-        }
-    }
-    public void LoadGraphicsUp()
-    {
-        for (int i = 0; i < loadedChunks.Count; i++)
-        {
-            VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphicsUpFast();
+            chunk.LoadGraphicsDownSuperSuperLowQ(4);
         }
     }
 
