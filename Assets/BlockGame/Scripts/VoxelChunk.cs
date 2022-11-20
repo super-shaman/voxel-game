@@ -134,7 +134,7 @@ public class VoxelChunk : IComparable
             ooo--;
         }
         VoxelChunk chunk = chunks[o * 3 * 3 + oo * 3 + ooo];
-        if (chunk != null)
+        if (ier >= 0 && ier < size && iier >= 0 && iier < size && iiier >= 0 && iiier < size && chunk != null)
         {
             return chunk.types[ier * size * size + iier * size + iiier];
         }
@@ -260,7 +260,7 @@ public class VoxelChunk : IComparable
         }
     }
     
-    public void LoadGraphicsDownLowQ()
+    /*public void LoadGraphicsDownLowQ()
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
         md.scale = 2.0f;
@@ -502,7 +502,7 @@ public class VoxelChunk : IComparable
             }
         }
     }
-
+    */
     public void LoadGraphicsDownSuperLowQ()
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
@@ -747,8 +747,12 @@ public class VoxelChunk : IComparable
         }
     }
 
-    int GetBlockScaled(int scale, Vector3Int vvv, ref MeshData md)
+    int GetBlockScaled(int scale, bool fast, int scaler, Vector3Int vvv, ref MeshData md)
     {
+        scale /= scaler;
+        bool Nonsolid = true;
+        int type = -1;
+        int aa = 0;
         for (int o = 0; o < scale * scale * scale; o++)
         {
             md.supersuperLowResLoader[o].x = -1;
@@ -760,19 +764,34 @@ public class VoxelChunk : IComparable
             {
                 for (int ooo = 0; ooo < scale; ooo++)
                 {
-                    Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
+                    Vector3Int vv = new Vector3Int(vvv.x + o*scaler, vvv.y + oo*scaler, vvv.z + ooo*scaler);
                     int t = GetType(vv.x, vv.y, vv.z);
-                    int a = t == -1 ? 0 : md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1));
-                    if (t > 0 && MeshData.blockShape[t] == 0 && a != 0)
+                    int a = t <= 0 ? 0 : md.VisibleFaces(vv, t, GetType(vv.x - scaler, vv.y, vv.z), GetType(vv.x + scaler, vv.y, vv.z), GetType(vv.x, vv.y - scaler, vv.z), GetType(vv.x, vv.y + scaler, vv.z), GetType(vv.x, vv.y, vv.z - scaler), GetType(vv.x, vv.y, vv.z + scaler));
+                    if (t > 0 && MeshData.blockShape[t] == 0 && !MeshData.fastSolid[t] && a != 0)
                     {
                         md.supersuperLowResLoader[o * scale * scale + oo * scale + ooo].x = t;
-                        md.supersuperLowResLoader[o * scale * scale + oo * scale + ooo].y += a;
+                        md.supersuperLowResLoader[o * scale * scale + oo * scale + ooo].y = a;
+                    }
+                    if (t > 0 && !MeshData.fastSolid[t] && a != 0)
+                    {
+                        type = -1;
+                        Nonsolid = false;
+                        if (fast)
+                        {
+                            return type;
+                        }
+                    }
+                    if (t != -1 && type == -1 && MeshData.fastSolid[t])
+                    {
+                        type = t;
                     }
                 }
             }
         }
-        int type = -1;
-        int aa = 0;
+        if (Nonsolid)
+        {
+            return type;
+        }
         for (int o = 0; o < scale * scale * scale; o++)
         {
             Vector2Int vv = md.supersuperLowResLoader[o];
@@ -781,8 +800,8 @@ public class VoxelChunk : IComparable
                 Vector2Int vver = md.supersuperLowResLoader[oo];
                 if (vv.x == vver.x)
                 {
-                    vv.y += vver.y;
-                    vver.x = -1;
+                    md.supersuperLowResLoader[o].y += vver.y;
+                    md.supersuperLowResLoader[oo].x = -1;
                 }
             }
         }
@@ -795,35 +814,13 @@ public class VoxelChunk : IComparable
                 aa = vv.y;
             }
         }
-        if (type == -1)
-        {
-
-            for (int o = 0; o < scale; o++)
-            {
-                for (int oo = 0; oo < scale; oo++)
-                {
-                    for (int ooo = 0; ooo < scale; ooo++)
-                    {
-                        Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
-                        int t = GetType(vv.x, vv.y, vv.z);
-                        if (t > 0 && !MeshData.fastSolid[t] && MeshData.blockShape[t] == 0 && md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1)) != 0)
-                        {
-                            return type;
-                        }
-                        if (t != -1 && type == -1 && MeshData.fastSolid[t])
-                        {
-                            type = t;
-                        }
-                    }
-                }
-            }
-        }
         return type;
     }
-
+    public static int DistantSampling = 2;
     public void LoadGraphicsDownSuperSuperLowQ(int scale)
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
+        int scaler =  DistantSampling == 0 ? (scale >= 4 ? 2 : 1) : DistantSampling == 1 ? (scale == 8 ? 2 : 1) : 1;
         md.scale = scale;
         if (md.offset.magnitude == 0)
         {
@@ -859,60 +856,15 @@ public class VoxelChunk : IComparable
                         md.scale = scale;
                     }
                     Vector3Int vvv = v;
-                    for (int o = 0; o < scale*scale*scale; o++)
+                    int type = GetBlockScaled(scale, false, scaler, vvv, ref md);
+                    if (type > 0 && MeshData.blockShape[type] == 0)
                     {
-                        md.supersuperLowResLoader[o].x = -1;
-                        md.supersuperLowResLoader[o].y = 0;
-                    }
-                    for (int o = 0; o < scale; o++)
-                    {
-                        for (int oo = 0; oo < scale; oo++)
-                        {
-                            for (int ooo = 0; ooo < scale; ooo++)
-                            {
-                                Vector3Int vv = new Vector3Int(vvv.x + o, vvv.y + oo, vvv.z + ooo);
-                                int t = GetType(vv.x, vv.y, vv.z);
-                                int a = md.VisibleFaces(vv, t, GetType(vv.x - 1, vv.y, vv.z), GetType(vv.x + 1, vv.y, vv.z), GetType(vv.x, vv.y - 1, vv.z), GetType(vv.x, vv.y + 1, vv.z), GetType(vv.x, vv.y, vv.z - 1), GetType(vv.x, vv.y, vv.z + 1));
-                                if (t > 0 && MeshData.blockShape[t] == 0 && a != 0)
-                                {
-                                    md.supersuperLowResLoader[o * scale*scale + oo * scale + ooo].x = t;
-                                    md.supersuperLowResLoader[o * scale*scale + oo * scale + ooo].y += a;
-                                }
-                            }
-                        }
-                    }
-                    int type = -1;
-                    int aa = 0;
-                    for (int o = 0; o < scale*scale*scale; o++)
-                    {
-                        Vector2Int vv = md.supersuperLowResLoader[o];
-                        for (int oo = o + 1; oo < scale * scale * scale; oo++)
-                        {
-                            Vector2Int vver = md.supersuperLowResLoader[oo];
-                            if (vv.x == vver.x)
-                            {
-                                vv.y += vver.y;
-                                vver.x = -1;
-                            }
-                        }
-                    }
-                    for (int o = 0; o < scale * scale * scale; o++)
-                    {
-                        Vector2Int vv = md.supersuperLowResLoader[o];
-                        if (vv.x > 0 && vv.y > aa)
-                        {
-                            type = vv.x;
-                            aa = vv.y;
-                        }
-                    }
-                    if (type >= 0)
-                    {
-                        int left = GetBlockScaled(scale, vvv + new Vector3Int(-scale, 0, 0), ref md);
-                        int right = GetBlockScaled(scale, vvv + new Vector3Int(scale, 0, 0), ref md);
-                        int back = GetBlockScaled(scale, vvv + new Vector3Int(0, -scale, 0), ref md);
-                        int front = GetBlockScaled(scale, vvv + new Vector3Int(0, scale, 0), ref md);
-                        int bottom = GetBlockScaled(scale, vvv + new Vector3Int(0, 0, -scale), ref md);
-                        int top = GetBlockScaled(scale, vvv + new Vector3Int(0, 0, scale), ref md);
+                        int left = GetBlockScaled(scale, true, scaler, vvv + new Vector3Int(-scale, 0, 0), ref md);
+                        int right = GetBlockScaled(scale, true, scaler, vvv + new Vector3Int(scale, 0, 0), ref md);
+                        int back = GetBlockScaled(scale, true, scaler, vvv + new Vector3Int(0, -scale, 0), ref md);
+                        int front = GetBlockScaled(scale, true, scaler, vvv + new Vector3Int(0, scale, 0), ref md);
+                        int bottom = GetBlockScaled(scale, true, scaler, vvv + new Vector3Int(0, 0, -scale), ref md);
+                        int top = GetBlockScaled(scale, true, scaler, vvv + new Vector3Int(0, 0, scale), ref md);
                         md.LoadVoxelFast(v, type, left, right, back, front, bottom, top);
                     }
                 }

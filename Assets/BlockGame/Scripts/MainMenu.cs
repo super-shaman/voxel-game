@@ -13,6 +13,7 @@ public class MainMenu : MonoBehaviour
     public Slider frameRate;
     public TextMeshProUGUI frameRateText;
     public TMP_Dropdown qualityDropDown;
+    public Slider distantSampling;
 
     public void StartGame()
     {
@@ -40,6 +41,11 @@ public class MainMenu : MonoBehaviour
             System.Diagnostics.Process.GetCurrentProcess().Kill();
 
         }
+    }
+
+    public void SetDistantMeshStrength()
+    {
+        VoxelChunk.DistantSampling = (int)distantSampling.value;
     }
 
     public void Quit()

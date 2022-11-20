@@ -104,20 +104,12 @@ public class TerrainChunk
             chunk.LoadGraphicsDownFast();
         }
     }
-    public void LoadGraphicsDownNoGrass()
+    public void LoadGraphicsDownSuperLowQ(int scale)
     {
         for (int i = loadedChunks.Count - 1; i >= 0; i--)
         {
             VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphicsDownSuperSuperLowQ(2);
-        }
-    }
-    public void LoadGraphicsDownSuperLowQ()
-    {
-        for (int i = loadedChunks.Count - 1; i >= 0; i--)
-        {
-            VoxelChunk chunk = loadedChunks[i];
-            chunk.LoadGraphicsDownSuperSuperLowQ(4);
+            chunk.LoadGraphicsDownSuperSuperLowQ(scale);
         }
     }
 
@@ -205,7 +197,7 @@ public class TerrainChunk
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            if (ii <= 3)
+            /*if (ii <= 3)
             {
                 terrain.chunks[3].LoadChunk(iiier);
             }
@@ -228,36 +220,23 @@ public class TerrainChunk
             if (iii <= 3)
             {
                 terrain.LoadChunk(iiier - 1);
-            }
-
+            }*/
+            terrain.chunks[3].LoadChunk(iiier);
+            terrain.chunks[5].LoadChunk(iiier);
+            terrain.chunks[7].LoadChunk(iiier);
+            terrain.chunks[1].LoadChunk(iiier);
+            terrain.LoadChunk(iiier + 1);
+            terrain.LoadChunk(iiier - 1);
             chunk.SetType(i, ii, iii, type);
         }else
         {
             chunk = terrain.LoadChunk(iiier);
-            if (ii <= 3)
-            {
-                terrain.chunks[3].LoadChunk(iiier);
-            }
-            if (ii >= size - 4)
-            {
-                terrain.chunks[5].LoadChunk(iiier);
-            }
-            if (i >= size - 4)
-            {
-                terrain.chunks[7].LoadChunk(iiier);
-            }
-            if (i <= 3)
-            {
-                terrain.chunks[1].LoadChunk(iiier);
-            }
-            if (iii >= size - 4)
-            {
-                terrain.LoadChunk(iiier + 1);
-            }
-            if (iii <= 3)
-            {
-                terrain.LoadChunk(iiier - 1);
-            }
+            terrain.chunks[3].LoadChunk(iiier);
+            terrain.chunks[5].LoadChunk(iiier);
+            terrain.chunks[7].LoadChunk(iiier);
+            terrain.chunks[1].LoadChunk(iiier);
+            terrain.LoadChunk(iiier + 1);
+            terrain.LoadChunk(iiier - 1);
             chunk.SetType(i, ii, iii, type);
         }
     }
@@ -282,59 +261,23 @@ public class TerrainChunk
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            if (ii <= 3)
-            {
-                terrain.chunks[3].LoadChunk(iiier);
-            }
-            if (ii >= size - 4)
-            {
-                terrain.chunks[5].LoadChunk(iiier);
-            }
-            if (i >= size - 4)
-            {
-                terrain.chunks[7].LoadChunk(iiier);
-            }
-            if (i <= 3)
-            {
-                terrain.chunks[1].LoadChunk(iiier);
-            }
-            if (iii >= size - 4)
-            {
-                terrain.LoadChunk(iiier + 1);
-            }
-            if (iii <= 3)
-            {
-                terrain.LoadChunk(iiier - 1);
-            }
-            
+            terrain.chunks[3].LoadChunk(iiier);
+            terrain.chunks[5].LoadChunk(iiier);
+            terrain.chunks[7].LoadChunk(iiier);
+            terrain.chunks[1].LoadChunk(iiier);
+            terrain.LoadChunk(iiier + 1);
+            terrain.LoadChunk(iiier - 1);
+
         }
         else
         {
             chunk = terrain.LoadChunk(iiier);
-            if (ii <= 3)
-            {
-                terrain.chunks[3].LoadChunk(iiier);
-            }
-            if (ii >= size - 4)
-            {
-                terrain.chunks[5].LoadChunk(iiier);
-            }
-            if (i >= size - 4)
-            {
-                terrain.chunks[7].LoadChunk(iiier);
-            }
-            if (i <= 3)
-            {
-                terrain.chunks[1].LoadChunk(iiier);
-            }
-            if (iii >= size - 4)
-            {
-                terrain.LoadChunk(iiier + 1);
-            }
-            if (iii <= 3)
-            {
-                terrain.LoadChunk(iiier - 1);
-            }
+            terrain.chunks[3].LoadChunk(iiier);
+            terrain.chunks[5].LoadChunk(iiier);
+            terrain.chunks[7].LoadChunk(iiier);
+            terrain.chunks[1].LoadChunk(iiier);
+            terrain.LoadChunk(iiier + 1);
+            terrain.LoadChunk(iiier - 1);
         }
     }
 

@@ -33,9 +33,9 @@ public class MeshData
             normals[i].Normalize();
         }
     }
-    public Vector2Int[] lowResLoader = new Vector2Int[8];
     public Vector2Int[] superLowResLoader = new Vector2Int[64];
     public Vector2Int[] supersuperLowResLoader = new Vector2Int[512];
+    public Dictionary<byte, int> lowResLoader = new Dictionary<byte, int>();
     public int lod = 0;
     public static int maxVertices = 65000;
     public void Unload()

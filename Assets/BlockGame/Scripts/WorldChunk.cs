@@ -654,7 +654,7 @@ public class WorldChunk : IComparable
             {
                 TerrainChunk t = terrains[i, ii];
                 t.SortVoxelChunks();
-                t.LoadGraphicsDownNoGrass();
+                t.LoadGraphicsDownSuperLowQ(2);
             }
         }
         /*for (int i = 0; i < loadOrder.Length; i++)
@@ -681,7 +681,7 @@ public class WorldChunk : IComparable
             {
                 TerrainChunk t = terrains[i, ii];
                 t.SortVoxelChunks();
-                t.LoadGraphicsDownSuperLowQ();
+                t.LoadGraphicsDownSuperLowQ(4);
             }
         }
         /*for (int i = 0; i < loadOrder.Length; i++)
@@ -694,6 +694,33 @@ public class WorldChunk : IComparable
             meshData[i].Normalize();
         }
         lodLevel = 2;
+        areGraphicsLoaded = true;
+        done = true;
+        loading = false;
+        NeedsToLoad = false;
+    }
+
+    public void LoadGraphicsSuperSuperLowQ()
+    {
+        for (int i = worldChunkSize - 1; i >= 0; i--)
+        {
+            for (int ii = worldChunkSize - 1; ii >= 0; ii--)
+            {
+                TerrainChunk t = terrains[i, ii];
+                t.SortVoxelChunks();
+                t.LoadGraphicsDownSuperLowQ(8);
+            }
+        }
+        /*for (int i = 0; i < loadOrder.Length; i++)
+        {
+            Vector2Int v = loadOrder[i];
+            terrains[v.x, v.y].LoadGraphicsUp();
+        }*/
+        for (int i = 0; i < meshData.Count; i++)
+        {
+            meshData[i].Normalize();
+        }
+        lodLevel = 3;
         areGraphicsLoaded = true;
         done = true;
         loading = false;

@@ -724,9 +724,16 @@ public class World : MonoBehaviour
                             c++;
                         }
                     }
-                    else
+                    else if (dist < GrassDistance*6)
                     {
                         if (wc.lodLevel != 2)
+                        {
+                            wc.MakeLoadable();
+                            c++;
+                        }
+                    }else
+                    {
+                        if (wc.lodLevel != 3)
                         {
                             wc.MakeLoadable();
                             c++;
@@ -765,9 +772,17 @@ public class World : MonoBehaviour
                         c++;
                     }
                 }
-                else
+                else if (dist < GrassDistance * 6)
                 {
                     if (wc.lodLevel != 2)
+                    {
+                        wc.MakeLoadable();
+                        c++;
+                    }
+                }
+                else
+                {
+                    if (wc.lodLevel != 3)
                     {
                         wc.MakeLoadable();
                         c++;
@@ -853,10 +868,19 @@ public class World : MonoBehaviour
                     loadingGraphics.RemoveAt(i);
                     amount++;
                 }
-                else
+                else if (dist < GrassDistance*6)
                 {
                     closest.loading = true;
                     Thread thread = new Thread(closest.LoadGraphicsSuperLowQ);
+                    thread.Start();
+                    graphicsThreads.Add(thread);
+                    loadGraphics.Add(closest);
+                    loadingGraphics.RemoveAt(i);
+                    amount++;
+                }else
+                {
+                    closest.loading = true;
+                    Thread thread = new Thread(closest.LoadGraphicsSuperSuperLowQ);
                     thread.Start();
                     graphicsThreads.Add(thread);
                     loadGraphics.Add(closest);
@@ -919,13 +943,25 @@ public class World : MonoBehaviour
                     amount++;
                 }
             }
-            else
+            else if (dist < GrassDistance*6)
             {
                 if (wc.lodLevel != 2)
                 {
                     wc.meshData.Add(GetMeshData());
                     wc.loading = true;
                     Thread thread = new Thread(wc.LoadGraphicsSuperLowQ);
+                    thread.Start();
+                    graphicsThreads.Add(thread);
+                    reloadGraphics.Add(wc);
+                    amount++;
+                }
+            }else
+            {
+                if (wc.lodLevel != 3)
+                {
+                    wc.meshData.Add(GetMeshData());
+                    wc.loading = true;
+                    Thread thread = new Thread(wc.LoadGraphicsSuperSuperLowQ);
                     thread.Start();
                     graphicsThreads.Add(thread);
                     reloadGraphics.Add(wc);
