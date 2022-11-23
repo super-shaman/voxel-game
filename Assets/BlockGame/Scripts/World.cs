@@ -33,11 +33,14 @@ public class World : MonoBehaviour
     List<WorldChunk> worldsToLoad;
     List<WorldChunk> loadingGraphics;
     List<WorldChunk> loadingChunks;
+    List<ChunkBatch> loadingBatches = new List<ChunkBatch>();
+    List<ChunkBatch> unloadingBatches = new List<ChunkBatch>();
 
     public static World world;
 
     void Start()
     {
+        BatchCache.LoadFull();
         if (!Directory.Exists("worldSave"))
         {
             Directory.CreateDirectory("worldSave");
@@ -149,6 +152,8 @@ public class World : MonoBehaviour
         }
         addGraphics = true;
         player.chunk = worldChunks[worldChunkLoadSize / 2, worldChunkLoadSize / 2];
+        Application.targetFrameRate = MainMenu.FrameRate;
+        QualitySettings.vSyncCount = MainMenu.VSync ? 1 : 0;
     }
 
     //VoxelChunk Pooling
@@ -396,6 +401,13 @@ public class World : MonoBehaviour
                 }
                 if (should ? should : (new Vector2Int(index1, index2) - chunkIndex).magnitude > worldChunkLoadSize / 2)
                 {
+                    if (chunk.batched())
+                    {
+                        if (!unloadingBatches.Contains(chunk.batch))
+                        {
+                            unloadingBatches.Add(chunk.batch);
+                        }
+                    }
                     if (chunk.StructuresLoaded() == 9)
                     {
                         chunk.SaveToDisk();
@@ -808,6 +820,31 @@ public class World : MonoBehaviour
                             continue;
                         }
                     }
+                    if (Batch && !wc.batched())
+                    {
+                        ChunkBatch batch = new ChunkBatch();
+                        bool Success = false;
+                        if (batch.AddChunk(wc))
+                        {
+                            for (int o = 0; o < 3; o++)
+                            {
+                                for (int oo = 0; oo < 3; oo++)
+                                {
+                                    WorldChunk wwc = wc.chunks[o * 3 + oo];
+                                    if (!(o == 1 && oo == 1) && !wwc.batched() && batch.AddChunk(wwc))
+                                    {
+                                        wc.batch = batch;
+                                        wwc.batch = batch;
+                                        Success = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (Success)
+                        {
+                            loadingBatches.Add(batch);
+                        }
+                    }
                 }
                 if ((new Vector2Int(wc.index1 * worldChunkSizer, wc.index2 * worldChunkSizer) - pos).magnitude > 256 + worldChunkSizer * 2)
                 {
@@ -977,6 +1014,7 @@ public class World : MonoBehaviour
         graphicsDone = true;
     }
 
+    public static bool Batch = true;
     public static float GrassDistance = 256;
 
     List<WorldChunk> reloadGraphics = new List<WorldChunk>();
@@ -1044,7 +1082,7 @@ public class World : MonoBehaviour
     bool RepositionGraphics;
     bool AddGraphics = false;
     float garbageTimer = 0;
-
+    static MeshData BatchCache = new MeshData();
     void RunGame()
     {
         if (paused)
@@ -1099,7 +1137,7 @@ public class World : MonoBehaviour
         }
         if (addGraphics)
         {
-            if (LoadChunks && loadGraphics.Count == 0 && reloadGraphics.Count == 0)
+            if (LoadChunks && loadGraphics.Count == 0 && reloadGraphics.Count == 0 && loadingBatches.Count == 0)
             {
                 LoadChunks = false;
             }
@@ -1120,9 +1158,85 @@ public class World : MonoBehaviour
                 graphicsDone = false;
                 LoadChunks = true;
             }
+            if (LoadChunks && loadingBatches.Count > 0)
+            {
+                int ind = loadingBatches.Count - 1;
+                ChunkBatch batch = loadingBatches[ind];
+                Chunk c = GetChunk();
+                batch.chunk = c;
+                WorldChunk wc = batch.batchedChunks[0];
+                c.loadBare(worldChunkSizer, wc);
+                MeshData md = GetMeshData();
+                Chunk ch = wc.graphics[0];
+                for (int i = 0; i < batch.batchedChunks.Count; i++)
+                {
+                    WorldChunk wwc = batch.batchedChunks[i];
+                    Chunk chunk = wwc.graphics[0];
+                    int index = md.vertices.Count;
+                    int vertexCount = chunk.mf.mesh.vertexCount;
+                    chunk.mf.mesh.GetVertices(BatchCache.vertices);
+                    for (int ii = 0; ii < vertexCount; ii++)
+                    {
+                        md.vertices.Add(BatchCache.vertices[ii]+new Vector3((wwc.index1 - wc.index1) * worldChunkSizer, 0, (wwc.index2 - wc.index2) * worldChunkSizer) + (chunk.offset - ch.offset));
+                    }
+                    for (int iii = 0; iii < 7; iii++)
+                    {
+                        uint indexCount = chunk.mf.mesh.GetIndexCount(iii);
+                        if (indexCount > 0)
+                        {
+                            int indexer = md.indices[iii].Count;
+                            chunk.mf.mesh.GetIndices(BatchCache.indices[iii], iii);
+                            for (int iiii = 0; iiii < indexCount; iiii++)
+                            {
+                                md.indices[iii].Add((ushort)(BatchCache.indices[iii][iiii]+index));
+                            }
+                        }
+
+                    }
+                    chunk.mf.mesh.GetNormals(BatchCache.normals);
+                    for (int ii = 0; ii < vertexCount; ii++)
+                    {
+                        md.normals.Add(BatchCache.normals[ii]);
+                    }
+                    chunk.mf.mesh.GetUVs(0, BatchCache.uvs);
+                    for (int ii = 0; ii < vertexCount; ii++)
+                    {
+                        md.uvs.Add(BatchCache.uvs[ii]);
+                    }
+                    chunk.gameObject.SetActive(false);
+                    /*combine[i].mesh = chunk.mf.mesh;
+                    combine[i].transform = Matrix4x4.Translate(new Vector3((wwc.index1 - wc.index1) * worldChunkSizer, 0, (wwc.index2 - wc.index2) * worldChunkSizer) + (chunk.offset - wc.graphics[0].offset));
+                    chunk.gameObject.SetActive(false);*/
+                }
+                c.FinishBatch(worldChunkSizer, md);
+                c.PositionChunk(player.wp);
+                c.SetPosition();
+                c.Reload();
+                loadingBatches.RemoveAt(ind);
+                unloadMeshData.Add(md);
+            }
+            if (unloadingBatches.Count > 0)
+            {
+                int ind = unloadingBatches.Count - 1;
+                ChunkBatch b = unloadingBatches[ind];
+                b.chunk.Unload();
+                chunkPool.Add(b.chunk);
+                for (int i = 0; i < b.batchedChunks.Count; i++)
+                {
+                    WorldChunk wwc = b.batchedChunks[i];
+                    if (wwc.batch == b && wwc.graphics.Count > 0)
+                    {
+                        wwc.graphics[0].gameObject.SetActive(true);
+                        wwc.batch = null;
+                    }else
+                    {
+                    }
+                }
+                unloadingBatches.RemoveAt(ind);
+            }
             if (unloadGraphics.Count > 0)
             {
-                int ind = unloadGraphics.Count-1;
+                int ind = unloadGraphics.Count - 1;
                 Chunk c = unloadGraphics[ind];
                 unloadGraphics.RemoveAt(ind);
                 c.Unload();
@@ -1130,7 +1244,7 @@ public class World : MonoBehaviour
             }
             if (LoadChunks && loadGraphics.Count > 0)
             {
-                int ind = loadGraphics.Count-1;
+                int ind = loadGraphics.Count - 1;
                 WorldChunk wc = loadGraphics[ind];
                 Chunk c = GetChunk();
                 c.load(worldChunkSizer, wc, 0);
@@ -1146,34 +1260,55 @@ public class World : MonoBehaviour
                     graphicsGrass.Add(wc);
                 }
             }
-            if (LoadChunks && reloadGraphics.Count > 0)
+            if (loadingBatches.Count == 0 && unloadingBatches.Count == 0)
             {
-                int ind = reloadGraphics.Count - 1;
-                WorldChunk wc = reloadGraphics[ind];
-                Chunk c = GetChunk();
-                c.load(worldChunkSizer, wc, 0);
-                c.PositionChunk(player.wp);
-                c.SetPosition();
-                unloadMeshData.Add(wc.meshData[0]);
-                wc.meshData.RemoveAt(0);
-                graphicsReloader.Add(c);
-                if (wc.meshData.Count == 0)
+                if (LoadChunks && reloadGraphics.Count > 0)
                 {
-                    for (int i = 0; i < wc.graphics.Count; i++)
+                    int ind = reloadGraphics.Count - 1;
+                    WorldChunk wc = reloadGraphics[ind];
+                    if (wc.batched())
                     {
-                        Chunk gc = wc.graphics[i];
-                        gc.Unload();
-                        chunkPool.Add(gc);
+                        ChunkBatch b = wc.batch;
+                        b.chunk.Unload();
+                        chunkPool.Add(b.chunk);
+                        for (int i = 0; i < b.batchedChunks.Count; i++)
+                        {
+                            WorldChunk wwc = b.batchedChunks[i];
+                            if (wwc.batch == b && wwc.graphics.Count > 0)
+                            {
+                                wwc.graphics[0].gameObject.SetActive(true);
+                                wwc.batch = null;
+                            }
+                            else
+                            {
+                            }
+                        }
                     }
-                    wc.graphics.Clear();
-                    for (int i = 0; i < graphicsReloader.Count; i++)
+                    Chunk c = GetChunk();
+                    c.load(worldChunkSizer, wc, 0);
+                    c.PositionChunk(player.wp);
+                    c.SetPosition();
+                    unloadMeshData.Add(wc.meshData[0]);
+                    wc.meshData.RemoveAt(0);
+                    graphicsReloader.Add(c);
+                    if (wc.meshData.Count == 0)
                     {
-                        Chunk gc = graphicsReloader[i];
-                        gc.Reload();
-                        wc.graphics.Add(gc);
+                        for (int i = 0; i < wc.graphics.Count; i++)
+                        {
+                            Chunk gc = wc.graphics[i];
+                            gc.Unload();
+                            chunkPool.Add(gc);
+                        }
+                        wc.graphics.Clear();
+                        for (int i = 0; i < graphicsReloader.Count; i++)
+                        {
+                            Chunk gc = graphicsReloader[i];
+                            gc.Reload();
+                            wc.graphics.Add(gc);
+                        }
+                        graphicsReloader.Clear();
+                        reloadGraphics.RemoveAt(ind);
                     }
-                    graphicsReloader.Clear();
-                    reloadGraphics.RemoveAt(ind);
                 }
             }
         }

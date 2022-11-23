@@ -12,7 +12,6 @@ public class WorldChunk : IComparable
     int worldChunkSize;
     public int size = 0;
     TerrainChunk[,] terrains;
-    public int indexOffset = 0;
     int structuresLoaded = 0;
     int graphicsLoaded = 0;
     bool areHeightsLoaded = false;
@@ -31,8 +30,21 @@ public class WorldChunk : IComparable
     public List<Chunk> graphics = new List<Chunk>();
     public List<MeshData> meshData = new List<MeshData>();
 
+    public ChunkBatch batch = null;
     public static Vector2Int pos;
     public byte lodLevel = 255;
+    public int VertexCount;
+    public int IndexCount;
+
+    public bool batched()
+    {
+        return batch != null;
+    }
+
+    public void Batch(ChunkBatch batch)
+    {
+        this.batch = batch;
+    }
 
     public WorldChunk(int size, int wcs, int index1, int index2)
     {
@@ -151,6 +163,8 @@ public class WorldChunk : IComparable
         saved = false;
         structuresLoaded = 0;
         graphicsLoaded = 0;
+        VertexCount = 0;
+        IndexCount = 0;
         areHeightsLoaded = false;
         areStructuresLoaded = false;
         areGraphicsLoaded = false;
@@ -158,6 +172,7 @@ public class WorldChunk : IComparable
         NeedsToLoad = false;
         structuresReloading = false;
         loadedFromDisk = false;
+        batch = null;
         for (int i = 0; i < worldChunkSize; i++)
         {
             for (int ii = 0; ii < worldChunkSize; ii++)

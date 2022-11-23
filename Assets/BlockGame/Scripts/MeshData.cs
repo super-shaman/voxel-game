@@ -16,16 +16,36 @@ public class MeshData
         indices.Add(new List<ushort>(maxVertices * 3));
         vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
         vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
-        vertDictionary.Add(new Dictionary<Vector3, ushort>(maxVertices));
+        /*if (fullLoad)
+        {
+        }*/
     }
+
+    public void LoadFull()
+    {
+        for (int i = 0; i < maxVertices; i++)
+        {
+            vertices.Add(new Vector3());
+            normals.Add(new Vector3());
+            uvs.Add(new Vector2());
+            for (int ii = 0; ii < indices.Count; ii++)
+            {
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+                indices[ii].Add(0);
+            }
+        }
+    }
+
     public void Normalize()
     {
         for (int i = 0; i < normals.Count; i++)
@@ -57,6 +77,25 @@ public class MeshData
             vertDictionary[i].Clear();
         }
         offset = new Vector3();
+    }
+
+    public void MoveVertices(Vector3 v)
+    {
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            vertices[i] += v;
+        }
+    }
+
+    public void MoveIndices(int m)
+    {
+        for (int i = 0; i < indices.Count; i++)
+        {
+            for (int ii = 0; ii < indices[i].Count; ii++)
+            {
+                indices[i][ii] += (ushort)m;
+            }
+        }
     }
 
     public void LoadVoxel(Vector3Int v, int type, int leftType, int rightType, int bottomType, int topType, int backType, int frontType)

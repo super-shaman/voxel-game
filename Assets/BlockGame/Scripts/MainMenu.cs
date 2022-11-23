@@ -14,6 +14,8 @@ public class MainMenu : MonoBehaviour
     public TextMeshProUGUI frameRateText;
     public TMP_Dropdown qualityDropDown;
     public Slider distantSampling;
+    public Toggle vSync;
+    public Toggle batch;
 
     public void StartGame()
     {
@@ -77,12 +79,22 @@ public class MainMenu : MonoBehaviour
             Screen.SetResolution(r.width, r.height, FullScreenMode.ExclusiveFullScreen, 60);
         }
     }
-
+    public static int FrameRate = 60;
     public void SetFrameRate()
     {
         int rate = (int)frameRate.value*30;
-        Application.targetFrameRate = rate;
+        FrameRate = rate;
         frameRateText.text = "Frame Rate " + rate;
+    }
+    public static bool VSync = true;
+    public void VSYNC()
+    {
+        VSync = vSync.isOn;
+    }
+
+    public void Batch()
+    {
+        World.Batch = batch.isOn;
     }
 
     public void SetQualitySettings()
