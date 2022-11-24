@@ -820,7 +820,8 @@ public class World : MonoBehaviour
                             continue;
                         }
                     }
-                    if (Batch && !wc.batched())
+                    int batchSize = 3;
+                    if (Batch && !wc.batched() && wc.index1 - Mathf.FloorToInt((float)(wc.index1/(double)batchSize)) * batchSize == 0 && wc.index2 - Mathf.FloorToInt((float)(wc.index2 / (double)batchSize)) * batchSize == 0)
                     {
                         ChunkBatch batch = new ChunkBatch();
                         bool Success = false;
@@ -837,6 +838,22 @@ public class World : MonoBehaviour
                                         wwc.batch = batch;
                                         Success = true;
                                     }
+                                    /*if (batchSize > 3 && wwc.GraphicsLoaded() == 9)
+                                    {
+                                        for (int ooo = 0; ooo < 3; ooo++)
+                                        {
+                                            for (int oooo = 0; oooo < 3; oooo++)
+                                            {
+                                                WorldChunk wwwc = wwc.chunks[ooo * 3 + oooo];
+                                                if (!(o - 1 + ooo == 1 && oo - 1 + oooo == 1) && !wwwc.batched() && batch.AddChunk(wwwc))
+                                                {
+                                                    wwwc.batch = batch;
+                                                    wc.batch = batch;
+                                                    Success = true;
+                                                }
+                                            }
+                                        }
+                                    }*/
                                 }
                             }
                         }

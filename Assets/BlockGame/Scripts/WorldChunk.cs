@@ -266,6 +266,17 @@ public class WorldChunk : IComparable
     {
         return graphicsLoaded;
     }
+    public bool AllGraphicsLoaded()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            if (chunks[i].graphicsLoaded != 9)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 
     public void FinishChunk()
     {
