@@ -48,14 +48,14 @@ public class Player : MonoBehaviour
     float jumpTimer = 0;
     bool jumping;
     float zoom = 0;
-
+    bool Zoom = false;
     // Update is called once per frame
     void Update()
     {
         //Debug.Log(rb.velocity.magnitude);
         if (Input.GetMouseButtonDown(0))
         {
-            if (!World.world.paused)
+            if (!World.world.paused && paused)
             {
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
@@ -99,6 +99,29 @@ public class Player : MonoBehaviour
             if (runTimer < 0)
             {
                 runTimer = 0;
+            }
+        }
+        if (Input.GetKey(KeyCode.LeftControl))
+        {
+            run = true;
+        }
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            Zoom = true;
+        }
+        if (Input.GetKeyUp(KeyCode.C))
+        {
+            Zoom = false;
+        }
+        if (Zoom)
+        {
+            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 25+(zoom < 0 ? zoom : 0), 0.25f * Time.deltaTime > 1 ? 1 : 1 * Time.deltaTime);
+        }else if (cam.fieldOfView != 90)
+        {
+            cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, 90, 1 * Time.deltaTime > 1 ? 1 : 1 * Time.deltaTime);
+            if (90-cam.fieldOfView < 0.001f)
+            {
+                cam.fieldOfView = 90;
             }
         }
         if (Input.GetKeyDown(KeyCode.A))
@@ -145,34 +168,37 @@ public class Player : MonoBehaviour
         rotation.y += Input.GetAxis("Mouse Y");
         Quaternion q = Quaternion.Euler(-rotation.y, rotation.x, 0);
         cam.transform.rotation = q;
-        zoom += Input.mouseScrollDelta.y;
-        zoom = zoom < 0 ? 0 : zoom;
-        cam.transform.localPosition = camLocalPosition - cam.transform.forward * zoom;
-        UpdateSpeed();
 
         //Physics simulation for player now done on the render thread
 
-        a = Mathf.CeilToInt(Time.deltaTime / (1.0f / 60.0f));
-        a *= Mathf.FloorToInt((velocity.magnitude > 64 ? 64 : velocity.magnitude)+1)*8;
-        for (int i = 0; i < a; i++)
+        if (!paused)
         {
-            if (flying)
+            zoom += Input.mouseScrollDelta.y;
+            zoom = zoom < -20 ? -20 : zoom;
+            cam.transform.localPosition = camLocalPosition - cam.transform.forward * (zoom < 0 ? 0 : zoom);
+            UpdateSpeed();
+            a = Mathf.CeilToInt(Time.deltaTime / (1.0f / 60.0f));
+            a *= Mathf.FloorToInt((velocity.magnitude > 64 ? 64 : velocity.magnitude) + 1) * 8;
+            for (int i = 0; i < a; i++)
             {
-                Fly();
+                if (flying)
+                {
+                    Fly();
+                }
+                else
+                {
+                    Walk();
+                }
+                if (!OnGround)
+                {
+                    velocity += new Vector3(0, -GravityPower * Time.deltaTime / a, 0);
+                }
+                transform.position += velocity * Time.deltaTime / a;
+                OnGround = false;
+                currentImpulse = new Vector3();
+                collisionCount = 0;
+                chunk.SimulatePlayer(this);
             }
-            else
-            {
-                Walk();
-            }
-            if (!OnGround)
-            {
-                velocity += new Vector3(0, -GravityPower * Time.deltaTime/a, 0);
-            }
-            transform.position += velocity * Time.deltaTime/a;
-            OnGround = false;
-            currentImpulse = new Vector3();
-            collisionCount = 0;
-            chunk.SimulatePlayer(this);
         }
     }
     int a;

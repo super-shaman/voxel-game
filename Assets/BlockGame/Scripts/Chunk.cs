@@ -9,9 +9,16 @@ public class Chunk : MonoBehaviour
     public LODGroup lodGroup;
     public WorldPosition wp;
     public static float LODSize;
+    public int memIndex = 0;
     
     public Vector3 offset = new Vector3();
     bool loaded = false;
+    //public bool visible = false;
+
+    public bool Loaded()
+    {
+        return loaded;
+    }
 
     public void load(int size, WorldChunk chunk, int index)
     {
@@ -78,13 +85,11 @@ public class Chunk : MonoBehaviour
     Vector3 pos;
     public void PositionChunk(WorldPosition pl)
     {
-        if (!loaded) return;
         pos = pl.Distance(wp);
     }
 
     public void SetPosition()
     {
-        if (!loaded) return;
         transform.position = pos + offset;
     }
 
@@ -99,6 +104,13 @@ public class Chunk : MonoBehaviour
     public void Reload()
     {
         gameObject.SetActive(true);
+        loaded = true;
+    }
+
+    public void Hide()
+    {
+        gameObject.SetActive(false);
+        loaded = false;
     }
     
     public void Destroy()

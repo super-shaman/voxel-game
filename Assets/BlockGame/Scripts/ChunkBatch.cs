@@ -10,6 +10,7 @@ public class ChunkBatch
     public List<WorldChunk> batchedChunks = new List<WorldChunk>();
     public Chunk chunk;
     public int vertCounter = 0;
+    public bool batched = false;
     public ChunkBatch()
     {
     }

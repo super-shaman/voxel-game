@@ -4,9 +4,10 @@ using UnityEngine;
 
 public class MeshData
 {
-
     public MeshData()
     {
+        indices.Add(new List<ushort>(maxVertices * 3));
+        indices.Add(new List<ushort>(maxVertices * 3));
         indices.Add(new List<ushort>(maxVertices * 3));
         indices.Add(new List<ushort>(maxVertices * 3));
         indices.Add(new List<ushort>(maxVertices * 3));
@@ -53,14 +54,11 @@ public class MeshData
             normals[i].Normalize();
         }
     }
-    public Vector2Int[] superLowResLoader = new Vector2Int[64];
     public Vector2Int[] supersuperLowResLoader = new Vector2Int[512];
-    public Dictionary<byte, int> lowResLoader = new Dictionary<byte, int>();
-    public int lod = 0;
+    //public Dictionary<byte, int> lowResLoader = new Dictionary<byte, int>();
     public static int maxVertices = 65000;
     public void Unload()
     {
-        lod = 0;
         if (vertices.Count == 0)
         {
             return;
@@ -78,25 +76,7 @@ public class MeshData
         }
         offset = new Vector3();
     }
-
-    public void MoveVertices(Vector3 v)
-    {
-        for (int i = 0; i < vertices.Count; i++)
-        {
-            vertices[i] += v;
-        }
-    }
-
-    public void MoveIndices(int m)
-    {
-        for (int i = 0; i < indices.Count; i++)
-        {
-            for (int ii = 0; ii < indices[i].Count; ii++)
-            {
-                indices[i][ii] += (ushort)m;
-            }
-        }
-    }
+    
 
     public void LoadVoxel(Vector3Int v, int type, int leftType, int rightType, int bottomType, int topType, int backType, int frontType)
     {
@@ -142,28 +122,6 @@ public class MeshData
         LoadLeftFast(v.x, v.y, v.z, type);
         LoadBackFast(v.x, v.y, v.z, type);
     }
-    public void LoadVoxelFast(Vector3Int v, int type, bool leftType, bool rightType, bool backType, bool frontType, bool bottomType, bool topType)
-    {
-        bool t = leftType;
-        visible[0] = t;
-        t = rightType;
-        visible[1] = t;
-        t = backType;
-        visible[2] = t;
-        t = frontType;
-        visible[3] = t;
-        t = bottomType;
-        visible[4] = t;
-        t = topType;
-        visible[5] = t;
-        LoadTopFast(v.x, v.y, v.z, type);
-        LoadRightFast(v.x, v.y, v.z, type);
-        LoadForwardFast(v.x, v.y, v.z, type);
-
-        LoadBottomFast(v.x, v.y, v.z, type);
-        LoadLeftFast(v.x, v.y, v.z, type);
-        LoadBackFast(v.x, v.y, v.z, type);
-    }
 
     public int VisibleFaces(Vector3Int v, int type, int leftType, int rightType, int backType, int frontType, int bottomType, int topType)
     {
@@ -187,35 +145,7 @@ public class MeshData
         i += visible[5] ? 1 : 0;
         return i;
     }
-
-    public Color GetVoxelColor(Vector3Int v, int type, int leftType, int rightType, int bottomType, int topType, int backType, int frontType)
-    {
-        int t = leftType;
-        visible[0] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
-        t = rightType;
-        visible[1] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
-        t = bottomType;
-        visible[2] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
-        t = topType;
-        visible[3] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
-        t = backType;
-        visible[4] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
-        t = frontType;
-        visible[5] = t == -1 ? false : solid[type] ? fastSolid[t] : fastTransparent[t];
-        Color c = new Color(0,0,0,0);
-        for (int i = 0; i < 6; i++)
-        {
-            if (visible[i])
-            {
-                c += colors[side[type, i]];
-            }
-        }
-        return c;
-    }
-
-    public static Color[] colors;
-
-
+    
     public bool[] visible = new bool[6];
 
     public List<Vector3> vertices = new List<Vector3>(maxVertices);
@@ -226,13 +156,15 @@ public class MeshData
     public Vector3 offset = new Vector3();
 
     public static int[,] side = {
-        {0,0,0,0,0,0},
-        {0,0,0,0,0,0},
-        {1,0,2,2,2,2 },
-        {3,3,3,3,3,3 },
-        {4,4,4,4,4,4 },
-        {5,5,5,5,5,5 },
-        {6,6,6,6,6,6 }
+        {0,0,0,0,0,0},//air
+        {0,0,0,0,0,0},//dirt
+        {1,0,2,2,2,2 },//grass
+        {3,3,3,3,3,3 },//wood
+        {4,4,4,4,4,4 },//leaves
+        {5,5,5,5,5,5 },//grass
+        {6,6,6,6,6,6 },//water
+        {7,7,7,7,7,7 },
+        {8,8,8,8,8,8 }
     };
 
     public  static byte[] blockShape =
@@ -243,6 +175,8 @@ public class MeshData
         0,
         0,
         1,
+        0,
+        0,
         0
     };
 
@@ -254,6 +188,8 @@ public class MeshData
         false,
         true,
         true,
+        true,
+        false,
         true
     };
 
@@ -265,7 +201,10 @@ public class MeshData
         true,
         false,
         false,
+        false,
+        true,
         false
+
     };
 
     private static bool[] fast =
@@ -276,6 +215,8 @@ public class MeshData
         false,
         false,
         true,
+        false,
+        false,
         false
     };
     public  static bool[] fastSolid =
@@ -286,7 +227,9 @@ public class MeshData
         false,
         false,
         true,
-        true
+        true,
+        false,
+        false
     };
     private static bool[] fastTransparent =
     {
@@ -296,6 +239,8 @@ public class MeshData
         false,
         false,
         true,
+        false,
+        false,
         false
     };
 

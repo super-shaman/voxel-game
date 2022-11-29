@@ -70,6 +70,8 @@ MeshRenderer:
   - {fileID: 2100000, guid: 6c1b36137ba8b7e4d81f7544205d1098, type: 2}
   - {fileID: 2100000, guid: be0c03b381130334ea39667ace092311, type: 2}
   - {fileID: 2100000, guid: 1b2e8e083a0a6614c8aa6ade5ed33877, type: 2}
+  - {fileID: 2100000, guid: f928237fc7af65b4cb23fdbe7054c674, type: 2}
+  - {fileID: 2100000, guid: fe7e129d4aa41014fa80b7173d50bdd1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -105,8 +107,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mf: {fileID: 3799502320375007403}
   mr: {fileID: 3799502320375007404}
-  mc: {fileID: 0}
   lodGroup: {fileID: -364497345738039743}
+  memIndex: 0
+  offset: {x: 0, y: 0, z: 0}
 --- !u!205 &-364497345738039743
 LODGroup:
   m_ObjectHideFlags: 0

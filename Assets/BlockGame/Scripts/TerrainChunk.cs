@@ -78,16 +78,21 @@ public class TerrainChunk
         double aa = 0;
         int size = 12;
         double h = 0;
-        for (int i = 1; i <= size; i++)
+        for (int i = 2; i <= size; i += 2)
         {
             h += GetOctaveNoise(i, x, y) * a;
             aa += a;
-            a *= (GetOctaveNoise(i, x, y)*0.5+2) * 32;
+            a *= 64;// (GetOctaveNoise(i, x, y)+2)*32;
         }
         h /= aa;
-        double seaHeight = 0.05+(GetOctaveNoise(size-2, x,y)+1)*0.5*0.45;
-        double mountainHeight = 0.5 + (GetOctaveNoise(size-2, x, y) + 1) * 0.5 * 0.5;
-        h = h > seaHeight ? h * h : h < 0 ? h * 0.25 : (h*h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
+        h += GetOctaveNoise(size+1, x, y)*(1.0-Math.Abs(h));
+        h -= 0.125;
+        h = h > 0 ? h * 1.125 : h * (1.0 - 0.125);
+        double seaHeight = 0.05+(GetOctaveNoise(size-2, x,y)+1)*0.125;
+        double mountainHeight = 0.25;
+        seaHeight = seaHeight < mountainHeight ? mountainHeight : seaHeight;
+        double her = h - mountainHeight;
+        h = h > seaHeight ? h > mountainHeight ? h*h*(1-(her/(1-mountainHeight)))+h* (her / (1 - mountainHeight)): h*h:h < 0 ? h * 0.25 : (h*h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
         return (float)h;
     }
 
@@ -194,49 +199,65 @@ public class TerrainChunk
             ier -= oer - 1;
             iier -= ooer - 1;
         }
+        if (terrain.worldChunk.loadedFromDisk | !(Mathf.Abs(terrain.worldChunk.index1-worldChunk.index1) <= 1 && Mathf.Abs(terrain.worldChunk.index2 - worldChunk.index2) <= 1))
+        {
+            return;
+        }
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            /*if (ii <= 3)
+            if (ii < 8)
             {
                 terrain.chunks[3].LoadChunk(iiier);
             }
-            if (ii >= size - 4)
+            if (ii >= size - 8)
             {
                 terrain.chunks[5].LoadChunk(iiier);
             }
-            if (i >= size - 4)
+            if (i >= size - 8)
             {
                 terrain.chunks[7].LoadChunk(iiier);
             }
-            if (i <= 3)
+            if (i < 8)
             {
                 terrain.chunks[1].LoadChunk(iiier);
             }
-            if (iii >= size - 4)
+            if (iii >= size - 8)
             {
                 terrain.LoadChunk(iiier + 1);
             }
-            if (iii <= 3)
+            if (iii < 8)
             {
                 terrain.LoadChunk(iiier - 1);
-            }*/
-            terrain.chunks[3].LoadChunk(iiier);
-            terrain.chunks[5].LoadChunk(iiier);
-            terrain.chunks[7].LoadChunk(iiier);
-            terrain.chunks[1].LoadChunk(iiier);
-            terrain.LoadChunk(iiier + 1);
-            terrain.LoadChunk(iiier - 1);
+            }
             chunk.SetType(i, ii, iii, type);
         }else
         {
             chunk = terrain.LoadChunk(iiier);
-            terrain.chunks[3].LoadChunk(iiier);
-            terrain.chunks[5].LoadChunk(iiier);
-            terrain.chunks[7].LoadChunk(iiier);
-            terrain.chunks[1].LoadChunk(iiier);
-            terrain.LoadChunk(iiier + 1);
-            terrain.LoadChunk(iiier - 1);
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
             chunk.SetType(i, ii, iii, type);
         }
     }
@@ -258,26 +279,66 @@ public class TerrainChunk
             ier -= oer - 1;
             iier -= ooer - 1;
         }
+        if (terrain.worldChunk.loadedFromDisk | !(Mathf.Abs(terrain.worldChunk.index1 - worldChunk.index1) <= 1 && Mathf.Abs(terrain.worldChunk.index2 - worldChunk.index2) <= 1))
+        {
+            return;
+        }
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            terrain.chunks[3].LoadChunk(iiier);
-            terrain.chunks[5].LoadChunk(iiier);
-            terrain.chunks[7].LoadChunk(iiier);
-            terrain.chunks[1].LoadChunk(iiier);
-            terrain.LoadChunk(iiier + 1);
-            terrain.LoadChunk(iiier - 1);
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
 
         }
         else
         {
             chunk = terrain.LoadChunk(iiier);
-            terrain.chunks[3].LoadChunk(iiier);
-            terrain.chunks[5].LoadChunk(iiier);
-            terrain.chunks[7].LoadChunk(iiier);
-            terrain.chunks[1].LoadChunk(iiier);
-            terrain.LoadChunk(iiier + 1);
-            terrain.LoadChunk(iiier - 1);
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
         }
     }
 
@@ -404,7 +465,7 @@ public class TerrainChunk
             for (int o = 0; o < (4.0f / 3.0f * Mathf.PI * s * s * s > sphere.Length ? sphere.Length : 4.0f / 3.0f * Mathf.PI * s * s * s); o++)
             {
                 Vector3Int v = sphere[o];
-                SetBlock(i + v.x + (int)poser.x, ii + v.y + (int)poser.y, h + ooo + v.z, 3);
+                SetBlock(i + v.x + (int)poser.x, ii + v.y + (int)poser.y, h + ooo + v.z, 7);
             }
             if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i + (int)poser.x, index2 * size + ii + (int)poser.y, ooo, 5) / 2.0 + 0.5)*4*(2.0f-(float)ooo/height) < 1)
             {
@@ -416,7 +477,7 @@ public class TerrainChunk
                 {
                     Vector3Int v = sphere[o];
                     Vector2Int ver = new Vector2Int(v.x + Offset.x, v.y + Offset.y);
-                    SetBlock(ver.x, ver.y, h + ooo + v.z, 4);
+                    SetBlock(ver.x, ver.y, h + ooo + v.z, 8);
                 }
             }
             if ((WorldNoise.ValueCoherentNoise3D(index1 * size + i+(int)poser.x, index2 * size + ii+(int)poser.y, ooo, 4) / 2.0 + 0.5)*8 < 1)
