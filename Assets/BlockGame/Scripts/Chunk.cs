@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class Chunk : MonoBehaviour
 {
+    public Chunk previous;
     public MeshFilter mf;
     public MeshRenderer mr;
     public WorldChunk chunk;
@@ -13,6 +14,7 @@ public class Chunk : MonoBehaviour
     
     public Vector3 offset = new Vector3();
     bool loaded = false;
+    public bool unloading = false;
     //public bool visible = false;
 
     public bool Loaded()
@@ -22,6 +24,7 @@ public class Chunk : MonoBehaviour
 
     public void load(int size, WorldChunk chunk, int index)
     {
+        unloading = false;
         MeshData md = chunk.meshData[index];
         mf.mesh.SetVertices(md.vertices);
         mf.mesh.SetUVs(0, md.uvs);
@@ -95,9 +98,13 @@ public class Chunk : MonoBehaviour
 
     public void Unload()
     {
+        if (loaded)
+        {
+            gameObject.SetActive(false);
+        }
         offset = new Vector3();
         mf.mesh.Clear();
-        gameObject.SetActive(false);
+        chunk = null;
         loaded = false;
     }
 
@@ -120,4 +127,5 @@ public class Chunk : MonoBehaviour
         DestroyImmediate(gameObject);
     }
 
+    public Chunk next;
 }

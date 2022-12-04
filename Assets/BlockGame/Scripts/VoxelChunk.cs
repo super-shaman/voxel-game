@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class VoxelChunk : IComparable
 {
-
+    public VoxelChunk previous;
     public int index1;
     public int index2;
     public int index3;
@@ -383,4 +383,5 @@ public class VoxelChunk : IComparable
             }
         }
     }
+    public VoxelChunk next;
 }

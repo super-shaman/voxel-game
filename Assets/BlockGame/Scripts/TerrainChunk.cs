@@ -78,14 +78,16 @@ public class TerrainChunk
         double aa = 0;
         int size = 12;
         double h = 0;
-        for (int i = 2; i <= size; i += 2)
+        /*for (int i = 2; i <= size; i += 2)
         {
             h += GetOctaveNoise(i, x, y) * a;
             aa += a;
-            a *= 64;// (GetOctaveNoise(i, x, y)+2)*32;
-        }
-        h /= aa;
+            a *= 128;// (GetOctaveNoise(i, x, y)+2)*32;
+        }*/
+        h += GetOctaveNoise(size, x, y) * 1;
+        //h /= aa;
         h += GetOctaveNoise(size+1, x, y)*(1.0-Math.Abs(h));
+        h += GetOctaveNoise(size + 2, x, y) * (1.0 - Math.Abs(h));
         h -= 0.125;
         h = h > 0 ? h * 1.125 : h * (1.0 - 0.125);
         double seaHeight = 0.05+(GetOctaveNoise(size-2, x,y)+1)*0.125;
@@ -523,7 +525,7 @@ public class TerrainChunk
                     hh = height - h > hh ? height - h : hh;
                     for (int iii = 0; iii < hh; iii++)
                     {
-                        LoadBlock(i, ii, -iii);
+                        LoadBlock(i, ii, height-iii);
                     }
                 }
                 if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)
