@@ -59,22 +59,25 @@ public class WorldChunk : IComparable
         terrains = new TerrainChunk[size, size];
     }
 
-    public static bool ReverseSort;
+    public static byte ReverseSort;
 
     public int CompareTo(object obj)
     {
         WorldChunk other = (WorldChunk)obj;
-        if (!ReverseSort)
+        if (ReverseSort == 0)
         {
             return (new Vector2(other.newIndex1 * worldChunkSize * size, other.newIndex2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(newIndex1 * worldChunkSize * size, newIndex2 * worldChunkSize * size) - pos).magnitude);
         }
-        else
+        else if (ReverseSort == 1)
         {
             int m1 = Mathf.Abs(newIndex1 * worldChunkSize * size - pos.x);
             int m2 = Mathf.Abs(newIndex2 * worldChunkSize * size - pos.y);
             int m3 = Mathf.Abs(other.newIndex1 * worldChunkSize * size - pos.x);
             int m4 = Mathf.Abs(other.newIndex2 * worldChunkSize * size - pos.y);
             return (m1 > m2 ? m1 : m2).CompareTo(m3 > m4 ? m3 : m4);
+        }else
+        {
+            return (new Vector2(other.index1 * worldChunkSize * size, other.index2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(index1 * worldChunkSize * size, index2 * worldChunkSize * size) - pos).magnitude);
         }
     }
 
