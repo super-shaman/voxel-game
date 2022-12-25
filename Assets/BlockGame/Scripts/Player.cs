@@ -50,6 +50,18 @@ public class Player : MonoBehaviour
     float zoom = 0;
     bool Zoom = false;
     // Update is called once per frame
+    public bool BreakBlock()
+    {
+        if (Input.GetMouseButton(0))
+        {
+            if (!paused)
+            {
+                chunk.BreakBlock(this);
+                return true;
+            }
+        }
+        return false;
+    }
     void Update()
     {
         //Debug.Log(rb.velocity.magnitude);
@@ -101,7 +113,7 @@ public class Player : MonoBehaviour
                 runTimer = 0;
             }
         }
-        if (Input.GetKey(KeyCode.LeftControl))
+        if (Input.GetKey(KeyCode.LeftShift))
         {
             run = true;
         }
@@ -156,11 +168,11 @@ public class Player : MonoBehaviour
         {
             up = false;
         }
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKeyDown(KeyCode.LeftControl))
         {
             down = true;
         }
-        if (Input.GetKeyUp(KeyCode.LeftShift))
+        if (Input.GetKeyUp(KeyCode.LeftControl))
         {
             down = false;
         }
@@ -179,6 +191,7 @@ public class Player : MonoBehaviour
             UpdateSpeed();
             a = Mathf.CeilToInt(Time.deltaTime / (1.0f / 60.0f));
             a *= Mathf.FloorToInt((velocity.magnitude > 64 ? 64 : velocity.magnitude) + 1) * 8;
+            a = (a > 1000 ? 1000 : a);
             for (int i = 0; i < a; i++)
             {
                 if (flying)
@@ -236,6 +249,10 @@ public class Player : MonoBehaviour
         if (down)
         {
             move += new Vector3(0, -1, 0);
+        }
+        if (up)
+        {
+            move += new Vector3(0, 1, 0);
         }
         move = q*move.normalized;
         move *= 1+(speed * speed*0.5f);

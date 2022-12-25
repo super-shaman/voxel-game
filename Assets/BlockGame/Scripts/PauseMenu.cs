@@ -5,19 +5,50 @@ using UnityEngine;
 public class PauseMenu : MonoBehaviour
 {
     public GameObject scroll;
+    public GameObject controlScroll;
+    public GameObject controlMenu;
+    bool controlsOpen = false;
     void Start()
     {
         
     }
+
     float s = 0;
-    // Update is called once per frame
+
     void Update()
     {
-        if (World.world.paused)
+        if (World.world != null && World.world.paused)
         {
-            s -= Input.mouseScrollDelta.y;
-            s = s < 0 ? 0 : s;
-            scroll.transform.position = new Vector3(0, s*100, 0);
+            if (!controlsOpen)
+            {
+                s -= Input.mouseScrollDelta.y;
+                s = s < 0 ? 0 : s;
+                scroll.transform.position = new Vector3(0, s * 100, 0);
+            }else
+            {
+                s -= Input.mouseScrollDelta.y;
+                s = s < 0 ? 0 : s;
+                controlScroll.transform.position = new Vector3(0, s * 100, 0);
+            }
+        }else if (controlsOpen)
+        {
+            CloseControls();
         }
     }
+
+    public void OpenControls()
+    {
+        s = 0;
+        controlsOpen = true;
+        controlMenu.SetActive(true);
+        scroll.SetActive(false);
+    }
+    public void CloseControls()
+    {
+        s = 0;
+        controlsOpen = false;
+        controlMenu.SetActive(false);
+        scroll.SetActive(true);
+    }
+
 }

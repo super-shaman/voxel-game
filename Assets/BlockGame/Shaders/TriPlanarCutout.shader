@@ -4,6 +4,7 @@ Shader "Custom/TriPlanarCutOut"
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
+		_BumpMap("Bumpmap", 2D) = "bump" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
     }
@@ -20,6 +21,7 @@ Shader "Custom/TriPlanarCutOut"
         #pragma target 3.0
 
         sampler2D _MainTex;
+		sampler2D _BumpMap;
 
         struct Input
         {
@@ -56,24 +58,22 @@ Shader "Custom/TriPlanarCutOut"
 			float2 ty = IN.localCoord.xz;
 			float2 tz = IN.localCoord.xy;
 
-			// Base color
-			half4 cx = tex2D(_MainTex, tx);// *bf.x;
-			half4 cy = tex2D(_MainTex, ty);// *bf.y;
-			half4 cz = tex2D(_MainTex, tz);// *bf.z;
-			float3 n = abs(IN.localNormal);
-
 
 			float3 blockPos = IN.localCoord - floor(IN.localCoord);
-			half4 cc = (blockPos.x < 0.0001 || blockPos.x > 0.9999 ? cx : half4(0, 0, 0, 1));
-			cc = (blockPos.y < 0.0001 || blockPos.y > 0.9999 ? cy : cc);
-			cc = (blockPos.z < 0.0001 || blockPos.z > 0.9999 ? cz : cc);
-			half4 color = cc * _Color;
-			clip((color.a - 0.5f));
-			float4 c = color;
+			float2 cc = (blockPos.x < 0.0001 || blockPos.x > 0.9999 ? tx : float2(0, 0));
+			cc = (blockPos.y < 0.0001 || blockPos.y > 0.9999 ? ty : cc);
+			cc = (blockPos.z < 0.0001 || blockPos.z > 0.9999 ? tz : cc);
+			// Base color
+			half4 cx = tex2D(_MainTex, cc);// *bf.x;
+
+			half4 color = cx * _Color;
+			fixed4 c = color;
+			clip((c.a - 0.5f));
             o.Albedo = c.rgb;
             // Metallic and smoothness come from slider variables
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
+			o.Normal = UnpackNormal(tex2D(_BumpMap, cc));
             o.Alpha = c.a;
         }
         ENDCG

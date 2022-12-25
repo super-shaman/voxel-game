@@ -54,25 +54,30 @@ public class WorldChunk : IComparable
         this.worldChunkSize = size;
         this.index1 = index1;
         this.index2 = index2;
+        newIndex1 = index1;
+        newIndex2 = index2;
         terrains = new TerrainChunk[size, size];
     }
 
-    public static bool ReverseSort;
+    public static byte ReverseSort;
 
     public int CompareTo(object obj)
     {
         WorldChunk other = (WorldChunk)obj;
-        if (!ReverseSort)
+        if (ReverseSort == 0)
+        {
+            return (new Vector2(other.newIndex1 * worldChunkSize * size, other.newIndex2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(newIndex1 * worldChunkSize * size, newIndex2 * worldChunkSize * size) - pos).magnitude);
+        }
+        else if (ReverseSort == 1)
+        {
+            int m1 = Mathf.Abs(newIndex1 * worldChunkSize * size - pos.x);
+            int m2 = Mathf.Abs(newIndex2 * worldChunkSize * size - pos.y);
+            int m3 = Mathf.Abs(other.newIndex1 * worldChunkSize * size - pos.x);
+            int m4 = Mathf.Abs(other.newIndex2 * worldChunkSize * size - pos.y);
+            return (m1 > m2 ? m1 : m2).CompareTo(m3 > m4 ? m3 : m4);
+        }else
         {
             return (new Vector2(other.index1 * worldChunkSize * size, other.index2 * worldChunkSize * size) - pos).magnitude.CompareTo((new Vector2(index1 * worldChunkSize * size, index2 * worldChunkSize * size) - pos).magnitude);
-        }
-        else
-        {
-            int m1 = Mathf.Abs(index1 * worldChunkSize * size - pos.x);
-            int m2 = Mathf.Abs(index2 * worldChunkSize * size - pos.y);
-            int m3 = Mathf.Abs(other.index1 * worldChunkSize * size - pos.x);
-            int m4 = Mathf.Abs(other.index2 * worldChunkSize * size - pos.y);
-            return (m1 > m2 ? m1 : m2).CompareTo(m3 > m4 ? m3 : m4);
         }
     }
 
@@ -155,21 +160,6 @@ public class WorldChunk : IComparable
                 WorldChunk chunk = chunks[i * 3 + ii];
                 if (chunk.index1 == index1-1+i && chunk.index2 == index2 - 1 + ii)
                 {
-                    for (int iii = 0; iii < 3; iii++)
-                    {
-                        for (int iiii = 0; iiii < 3; iiii++)
-                        {
-                            WorldChunk wc = chunk.chunks[iii * 3 + iiii];
-                            if (wc.index1 == chunk.index1 - 1 + iii && wc.index2 == chunk.index2 - 1 + iiii)
-                            {
-                                if (wc.compressed && !wc.unloading)
-                                {
-                                    wc.LoadFromDisk();
-                                    wc.Decompress();
-                                }
-                            }
-                        }
-                    }
                     if (areGraphicsLoaded)
                     {
                         chunk.graphicsLoaded -= chunk.graphicsLoaded <= 0 ? 0 : 1;
@@ -210,6 +200,8 @@ public class WorldChunk : IComparable
         structuresReloading = false;
         loadedFromDisk = false;
         StructuresFinished = false;
+        updated = false;
+        updating = false;
         batch = null;
         for (int i = 0; i < worldChunkSize; i++)
         {
@@ -241,6 +233,21 @@ public class WorldChunk : IComparable
             }
         }
         return true;
+    }
+
+    public void SetNeedsToLoad()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            for (int ii = 0; ii < 3; ii++)
+            {
+                WorldChunk wc = chunks[i * 3 + ii];
+                if ((wc.index1 == index1 - 1 + i && wc.index2 == index2 - 1 + ii) && wc.CanLoadHeights() && wc.StructuresLoaded() == 9)
+                {
+                    wc.NeedsToLoad = true;
+                }
+            }
+        }
     }
     public bool MakeLoadable()
     {
@@ -359,7 +366,7 @@ public class WorldChunk : IComparable
             for (int ii = 0; ii < 3; ii++)
             {
 
-                if (!(chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii))
+                if (!(chunks[i * 3 + ii].index1 == index1 - 1 + i && chunks[i * 3 + ii].index2 == index2 - 1 + ii) | chunks[i*3+ii].unloading)
                 {
                     return false;
                 }
@@ -518,7 +525,7 @@ public class WorldChunk : IComparable
 
     public bool SaveToDisk()
     {
-        if (loadedFromDisk | compressed ? false : !File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
+        if (loadedFromDisk | compressed ? updated : updated ? true : !File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
         {
             using (FileStream fs = new FileStream("worldSave/data" + index1 + "_" + index2 + ".bin", FileMode.Create, FileAccess.Write))
             {
@@ -819,6 +826,118 @@ public class WorldChunk : IComparable
         1,
         1
     };
+
+    public void Update()
+    {
+        if (!updating)
+        {
+            World.world.UpdateChunk(this);
+            updating = true;
+            updated = true;
+        }
+    }
+
+    public void BreakBlock(Player p)
+    {
+        Vector3 pos = p.transform.position;
+        int i = Mathf.FloorToInt(pos.x) + p.wp.posIndex.x + worldChunkSize * size / 2 - index1 * worldChunkSize * size;
+        int ii = Mathf.FloorToInt(pos.z) + p.wp.posIndex.z + worldChunkSize * size / 2 - index2 * worldChunkSize * size;
+        WorldChunk terrain = null;
+        bool should = true;
+        while (should)
+        {
+            int ier = 1;
+            int iier = 1;
+            should = false;
+            if (i < 0)
+            {
+                should = true;
+                i += worldChunkSize * size;
+                ier--;
+            }
+            if (i >= worldChunkSize * size)
+            {
+                should = true;
+                i -= worldChunkSize * size;
+                ier++;
+            }
+            if (ii < 0)
+            {
+                should = true;
+                ii += worldChunkSize * size;
+                iier--;
+            }
+            if (ii >= worldChunkSize * size)
+            {
+                should = true;
+                ii -= worldChunkSize * size;
+                iier++;
+            }
+            terrain = terrain == null ? chunks[ier * 3 + iier] : terrain.chunks[ier * 3 + iier];
+        }
+        p.chunk = terrain;
+        if (terrain.GraphicsLoaded() != 9 | !terrain.CanLoad())
+        {
+            return;
+        }
+        int oer = Mathf.FloorToInt((float)i / size);
+        int ooer = Mathf.FloorToInt((float)ii / size);
+        int iii = Mathf.FloorToInt(pos.y) + p.wp.posIndex.y - 1;
+        TerrainChunk tc = terrain.terrains[oer, ooer];
+        for (int o = 0; o < 64; o++)
+        {
+            for (int oo = 0; oo < 64; oo++)
+            {
+                for (int ooo = 0; ooo < 64; ooo++)
+                {
+                    int ier = i - 32 + o - oer * size;
+                    int iier = ii - 32 + oo - ooer * size;
+                    int iiier = iii - 32 + ooo;
+                    if (tc.LoadBlockFast(ier, iier, iiier))
+                    {
+                        tc.SetBlockFast(ier, iier, iiier, 0);
+                        terrain.Update();
+                        if (i - 32 + o <= 0)
+                        {
+                            terrain.chunks[1].Update();
+                        }
+                        if (i - 32 + o >= worldChunkSize * size - 1)
+                        {
+                            terrain.chunks[7].Update();
+                        }
+                        if (ii - 32 + oo <= 0)
+                        {
+                            terrain.chunks[3].Update();
+                        }
+                        if (ii - 32 + oo >= worldChunkSize * size - 1)
+                        {
+                            terrain.chunks[5].Update();
+                        }
+                        if (i - 32 + o <= 0 && ii - 32 + oo <= 0)
+                        {
+                            terrain.chunks[0].Update();
+                        }
+                        if (i - 32 + o >= worldChunkSize * size - 1 && ii - 32 + oo <= 0)
+                        {
+                            terrain.chunks[6].Update();
+                        }
+                        if (i - 32 + o <= 0 && ii - 32 + oo >= worldChunkSize * size - 1)
+                        {
+                            terrain.chunks[2].Update();
+                        }
+                        if (i - 32 + o >= worldChunkSize * size - 1 && ii - 32 + oo >= worldChunkSize * size - 1)
+                        {
+                            terrain.chunks[8].Update();
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+    public bool updated = false;
+    public bool updating = false;
+
     public void SimulatePlayer(Player p)
     {
         Vector3 pos = p.transform.position;

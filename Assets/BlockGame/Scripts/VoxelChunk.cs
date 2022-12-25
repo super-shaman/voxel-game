@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class VoxelChunk : IComparable
 {
-
+    public VoxelChunk previous;
     public int index1;
     public int index2;
     public int index3;
@@ -332,7 +332,9 @@ public class VoxelChunk : IComparable
     public void LoadGraphicsDownSuperSuperLowQ(int scale)
     {
         MeshData md = terrain.worldChunk.meshData[terrain.worldChunk.meshData.Count - 1];
-        int scaler =  DistantSampling == 0 ? (scale >= 4 ? 2 : 1) : DistantSampling == 1 ? (scale == 8 ? 2 : 1) : 1;
+        int scaler =  DistantSampling == 0 ? 
+            (scale >= 4 ? 2 : 1) : DistantSampling == 1 ? 
+            (scale == 8 ? 2 : 1) : 1;
         md.scale = scale;
         if (md.offset.magnitude == 0)
         {
@@ -383,4 +385,5 @@ public class VoxelChunk : IComparable
             }
         }
     }
+    public VoxelChunk next;
 }

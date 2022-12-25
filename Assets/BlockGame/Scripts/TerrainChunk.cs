@@ -62,7 +62,7 @@ public class TerrainChunk
         double amount = 1;
         for (int iii = 0; iii < o; iii++)
         {
-            height += WorldNoise.ValueCoherentNoise3D(x / amount, y / amount, seeder, 0) * amount;
+            height += WorldNoise.ValueCoherentNoise3D(x / amount, seeder, y / amount, 0) * amount;
             seeder++;
             max += amount;
             amount *= 2;
@@ -71,31 +71,59 @@ public class TerrainChunk
         return height;
     }
     int seeder = 0;
+    public static double seaOffset = 0.25;
+    public static float heightScale = 1;//1.0f / 16.0f;
     public float GetHeight(double x, double y, int seed)
+    {
+        x /= heightScale;
+        y /= heightScale;
+        seeder = 0;
+        int size = 14;
+        double h = 0;
+        /*for (int i = 2; i <= size; i += 2)
+        {
+            h += GetOctaveNoise(i, x, y) * a;
+            aa += a;
+            a *= 128;// (GetOctaveNoise(i, x, y)+2)*32;
+        }*/
+        h += GetOctaveNoise(size, x, y) * 1;
+        double a = 1.0;
+        for (int i = 1; i < size; i++)
+        {
+            double h1 = GetOctaveNoise(size - i, x, y) / a;
+            h += h1 * (1.0 - Math.Abs(h));
+            a *= 2;
+        }
+        h -= seaOffset;
+        h = h > 0 ? h * (1.0 / (1.0 - seaOffset)) : h * (1.0 - seaOffset);
+        double seaHeight = 0.05+(GetOctaveNoise(size-2, x,y)+1)*0.125;
+        double mountainHeight = 0.25;
+        seaHeight = seaHeight < mountainHeight ? mountainHeight : seaHeight;
+        double her = h - mountainHeight;
+        h = h > seaHeight ? h > mountainHeight ? h*h*(1-(her/(1-mountainHeight)))+h* (her / (1 - mountainHeight)): h*h:h < 0 ? h * 0.25 : (h*h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
+        return (float)h*heightScale;
+    }
+
+    /*public float GetHeight(double x, double y, int seed)
     {
         seeder = 0;
         double a = 1;
         double aa = 0;
         int size = 12;
         double h = 0;
-        for (int i = 2; i <= size; i += 2)
-        {
-            h += GetOctaveNoise(i, x, y) * a;
-            aa += a;
-            a *= 64;// (GetOctaveNoise(i, x, y)+2)*32;
-        }
-        h /= aa;
-        h += GetOctaveNoise(size+1, x, y)*(1.0-Math.Abs(h));
+        h += GetOctaveNoise(size, x, y) * 1;
+        //h /= aa;
+        h += GetOctaveNoise(size + 1, x, y) * (1.0 - Math.Abs(h));
+        h += GetOctaveNoise(size + 2, x, y) * (1.0 - Math.Abs(h));
         h -= 0.125;
         h = h > 0 ? h * 1.125 : h * (1.0 - 0.125);
-        double seaHeight = 0.05+(GetOctaveNoise(size-2, x,y)+1)*0.125;
+        double seaHeight = 0.05 + (GetOctaveNoise(size - 2, x, y) + 1) * 0.125;
         double mountainHeight = 0.25;
         seaHeight = seaHeight < mountainHeight ? mountainHeight : seaHeight;
         double her = h - mountainHeight;
-        h = h > seaHeight ? h > mountainHeight ? h*h*(1-(her/(1-mountainHeight)))+h* (her / (1 - mountainHeight)): h*h:h < 0 ? h * 0.25 : (h*h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
+        h = h > seaHeight ? h > mountainHeight ? h * h * (1 - (her / (1 - mountainHeight))) + h * (her / (1 - mountainHeight)) : h * h : h < 0 ? h * 0.25 : (h * h) * h / seaHeight + h * 0.25 * (1.0 - h / seaHeight);
         return (float)h;
-    }
-
+    }*/
     public void SortVoxelChunks()
     {
         loadedChunks.Sort();
@@ -129,7 +157,7 @@ public class TerrainChunk
 
     VoxelChunk LoadChunk(int iii)
     {
-        if (voxelChunks[chunkDepth+iii] != null)
+        if (chunkDepth +iii < 1 | chunkDepth+iii >= chunkHeight+chunkDepth-1 ? true :  voxelChunks[chunkDepth+iii] != null)
         {
             return null;
         }
@@ -144,11 +172,15 @@ public class TerrainChunk
             {
                 for (int ooo = 0; ooo < 3; ooo++)
                 {
-                    VoxelChunk c = chunks[o * 3 + oo].voxelChunks[chunkDepth + chunk.index3 - 1 + ooo];
-                    if (c != null)
+                    int oer = chunk.index3 - 1 + ooo;
+                    if (oer >= -chunkDepth + 1 && oer < chunkHeight - 1)
                     {
-                        chunk.chunks[o * 3 * 3 + oo * 3 + ooo] = c;
-                        c.chunks[(2 - o) * 3 * 3 + (2 - oo) * 3 + 2 - ooo] = chunk;
+                        VoxelChunk c = chunks[o * 3 + oo].voxelChunks[chunkDepth + oer];
+                        if (c != null)
+                        {
+                            chunk.chunks[o * 3 * 3 + oo * 3 + ooo] = c;
+                            c.chunks[(2 - o) * 3 * 3 + (2 - oo) * 3 + 2 - ooo] = chunk;
+                        }
                     }
                 }
             }
@@ -171,11 +203,15 @@ public class TerrainChunk
             {
                 for (int ooo = 0; ooo < 3; ooo++)
                 {
-                    VoxelChunk c = chunks[o * 3 + oo].voxelChunks[chunkDepth + chunk.index3 - 1 + ooo];
-                    if (c != null)
+                    int oer = chunk.index3 - 1 + ooo;
+                    if (oer >= -chunkDepth+1 && oer < chunkHeight-1)
                     {
-                        chunk.chunks[o * 3 * 3 + oo * 3 + ooo] = c;
-                        c.chunks[(2 - o) * 3 * 3 + (2 - oo) * 3 + 2 - ooo] = chunk;
+                        VoxelChunk c = chunks[o * 3 + oo].voxelChunks[chunkDepth + oer];
+                        if (c != null)
+                        {
+                            chunk.chunks[o * 3 * 3 + oo * 3 + ooo] = c;
+                            c.chunks[(2 - o) * 3 * 3 + (2 - oo) * 3 + 2 - ooo] = chunk;
+                        }
                     }
                 }
             }
@@ -262,6 +298,83 @@ public class TerrainChunk
         }
     }
 
+    public void SetBlockFast(int i, int ii, int iii, int type)
+    {
+        int ier = Mathf.FloorToInt((float)i / size);
+        int iier = Mathf.FloorToInt((float)ii / size);
+        int iiier = Mathf.FloorToInt((float)iii / size);
+        i -= ier * size;
+        ii -= iier * size;
+        iii -= iiier * size;
+        TerrainChunk terrain = this;
+        while (ier != 0 | iier != 0)
+        {
+            int oer = (ier > 0 ? 2 : ier < 0 ? 0 : 1);
+            int ooer = (iier > 0 ? 2 : iier < 0 ? 0 : 1);
+            terrain = terrain.chunks[oer * 3 + ooer];
+            ier -= oer - 1;
+            iier -= ooer - 1;
+        }
+        VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
+        if (chunk != null)
+        {
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+            chunk.SetTypeFast(i * size * size + ii * size + iii, type);
+        }
+        else
+        {
+            chunk = terrain.LoadChunk(iiier);
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+            chunk.SetTypeFast(i*size*size+ii*size+iii, type);
+        }
+    }
+
     void LoadBlock(int i, int ii, int iii)
     {
         int ier = Mathf.FloorToInt((float)i / size);
@@ -342,10 +455,90 @@ public class TerrainChunk
         }
     }
 
+    public bool LoadBlockFast(int i, int ii, int iii)
+    {
+        int ier = Mathf.FloorToInt((float)i / size);
+        int iier = Mathf.FloorToInt((float)ii / size);
+        int iiier = Mathf.FloorToInt((float)iii / size);
+        i -= ier * size;
+        ii -= iier * size;
+        iii -= iiier * size;
+        TerrainChunk terrain = this;
+        while (ier != 0 | iier != 0)
+        {
+            int oer = (ier > 0 ? 2 : ier < 0 ? 0 : 1);
+            int ooer = (iier > 0 ? 2 : iier < 0 ? 0 : 1);
+            terrain = terrain.chunks[oer * 3 + ooer];
+            ier -= oer - 1;
+            iier -= ooer - 1;
+        }
+        if (!(iiier >= -chunkDepth + 1 && iiier < chunkHeight - 1))
+        {
+            return false;
+        }
+        VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
+        if (chunk != null)
+        {
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+        }
+        else
+        {
+            chunk = terrain.LoadChunk(iiier);
+            if (ii < 8)
+            {
+                terrain.chunks[3].LoadChunk(iiier);
+            }
+            if (ii >= size - 8)
+            {
+                terrain.chunks[5].LoadChunk(iiier);
+            }
+            if (i >= size - 8)
+            {
+                terrain.chunks[7].LoadChunk(iiier);
+            }
+            if (i < 8)
+            {
+                terrain.chunks[1].LoadChunk(iiier);
+            }
+            if (iii >= size - 8)
+            {
+                terrain.LoadChunk(iiier + 1);
+            }
+            if (iii < 8)
+            {
+                terrain.LoadChunk(iiier - 1);
+            }
+        }
+        return true;
+    }
+
     public int GetBlock(int i, int ii, int iii)
     {
         int iiier = Mathf.FloorToInt((float)iii / size);
-        if (iiier < -chunkDepth || iiier >= chunkHeight)
+        if (iiier < -chunkDepth+1 || iiier >= chunkHeight-1)
         {
             return 0;
         }
@@ -523,7 +716,7 @@ public class TerrainChunk
                     hh = height - h > hh ? height - h : hh;
                     for (int iii = 0; iii < hh; iii++)
                     {
-                        LoadBlock(i, ii, -iii);
+                        LoadBlock(i, ii, height-iii);
                     }
                 }
                 if (height > 2 && (WorldNoise.ValueCoherentNoise3D(index1 * size + i, index2 * size + ii, 0, 0) + 1) * 64 < 1)

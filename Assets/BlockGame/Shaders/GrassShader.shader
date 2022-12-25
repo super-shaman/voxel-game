@@ -4,6 +4,7 @@ Shader "Custom/GrassShader"
     {
         _Color ("Color", Color) = (1,1,1,1)
         _MainTex ("Albedo (RGB)", 2D) = "white" {}
+		_BumpMap("Bumpmap", 2D) = "bump" {}
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
     }
@@ -22,6 +23,7 @@ Shader "Custom/GrassShader"
         #pragma target 3.0
 
         sampler2D _MainTex;
+		sampler2D _BumpMap;
 
 
 		struct Input
@@ -59,6 +61,7 @@ Shader "Custom/GrassShader"
             o.Albedo = c.rgb;
             o.Metallic = _Metallic;
             o.Smoothness = _Glossiness;
+			o.Normal = UnpackNormal(tex2D(_BumpMap, IN.uv_MainTex));
             o.Alpha = c.a;
         }
         ENDCG
