@@ -50,17 +50,13 @@ public class Player : MonoBehaviour
     float zoom = 0;
     bool Zoom = false;
     // Update is called once per frame
-    public bool BreakBlock()
+    public byte BreakBlock()
     {
-        if (Input.GetMouseButton(0))
+        if (!paused)
         {
-            if (!paused)
-            {
-                chunk.BreakBlock(this);
-                return true;
-            }
+            return chunk.BreakBlock(this) ? (byte)1 : (byte)2;
         }
-        return false;
+        return 0;
     }
     void Update()
     {

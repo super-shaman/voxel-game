@@ -293,6 +293,30 @@ public class WorldChunk : IComparable
         return true;
     }
 
+    public bool AreAllGraphicsLoaded()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            if (!(chunks[i].CanLoadHeights() && chunks[i].graphicsLoaded == 9))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    public bool CanAllLoad()
+    {
+        for (int i = 0; i < 9; i++)
+        {
+            if (!chunks[i].CanLoad())
+            {
+                chunks[i].MakeLoadable();
+                return true;
+            }
+        }
+        return true;
+    }
+
     public bool AreHeightsLoaded()
     {
         return areHeightsLoaded;
@@ -527,54 +551,109 @@ public class WorldChunk : IComparable
     {
         if (loadedFromDisk | compressed ? updated : updated ? true : !File.Exists("worldSave/data" + index1 + "_" + index2 + ".bin"))
         {
-            using (FileStream fs = new FileStream("worldSave/data" + index1 + "_" + index2 + ".bin", FileMode.Create, FileAccess.Write))
+            if (compressed | loadedFromDisk)
             {
-                while (!fs.CanWrite)
+                using (FileStream fs = File.Open("worldSave/data" + index1 + "_" + index2 + ".bin", FileMode.Truncate, FileAccess.Write))
                 {
-                    Thread.Sleep(1);
-                }
-                for (int i = 0; i < worldChunkSize; i++)
-                {
-                    for (int ii = 0; ii < worldChunkSize; ii++)
+                    while (!fs.CanWrite)
                     {
-                        TerrainChunk tc = terrains[i, ii];
-                        Buffer.BlockCopy(tc.heights, 0, byteArray, 0, size*size * 4);
-                        fs.Write(byteArray, 0, size*size* 4);
-                        IntBuffer[0] = tc.loadedChunks.Count;
-                        Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
-                        fs.Write(byteArray, 0, 4);
-
-                        for (int iii = 0; iii < tc.loadedChunks.Count; iii++)
-                        {
-                            VoxelChunk vc = tc.loadedChunks[iii];
-                            if (CompressChunk(vc))
-                            {
-                                fs.WriteByte(1);
-                                IntBuffer[0] = compressorCount;
-                                Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
-                                fs.Write(byteArray, 0, 4);
-                                IntBuffer[0] = vc.index3;
-                                Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
-                                fs.Write(byteArray, 0, 4);
-                                fs.Write(compressor, 0, compressorCount);
-                                compressorCount = 0;
-                            }
-                            else
-                            {
-
-                                fs.WriteByte(0);
-                                IntBuffer[0] = vc.index3;
-                                Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
-                                fs.Write(byteArray, 0, 4);
-                                fs.Write(vc.types, 0, vc.types.Length);
-                            }
-                        }
-                        tc.Unload();
+                        Thread.Sleep(1);
                     }
+                    for (int i = 0; i < worldChunkSize; i++)
+                    {
+                        for (int ii = 0; ii < worldChunkSize; ii++)
+                        {
+                            TerrainChunk tc = terrains[i, ii];
+                            Buffer.BlockCopy(tc.heights, 0, byteArray, 0, size * size * 4);
+                            fs.Write(byteArray, 0, size * size * 4);
+                            IntBuffer[0] = tc.loadedChunks.Count;
+                            Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                            fs.Write(byteArray, 0, 4);
+
+                            for (int iii = 0; iii < tc.loadedChunks.Count; iii++)
+                            {
+                                VoxelChunk vc = tc.loadedChunks[iii];
+                                if (CompressChunk(vc))
+                                {
+                                    fs.WriteByte(1);
+                                    IntBuffer[0] = compressorCount;
+                                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                                    fs.Write(byteArray, 0, 4);
+                                    IntBuffer[0] = vc.index3;
+                                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                                    fs.Write(byteArray, 0, 4);
+                                    fs.Write(compressor, 0, compressorCount);
+                                    compressorCount = 0;
+                                }
+                                else
+                                {
+
+                                    fs.WriteByte(0);
+                                    IntBuffer[0] = vc.index3;
+                                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                                    fs.Write(byteArray, 0, 4);
+                                    fs.Write(vc.types, 0, vc.types.Length);
+                                }
+                            }
+                            tc.Unload();
+                        }
+                    }
+                    fs.Flush();
+                    fs.Close();
+                    fs.Dispose();
                 }
-                fs.Flush();
-                fs.Close();
-                fs.Dispose();
+            }
+            else
+            {
+                using (FileStream fs = new FileStream("worldSave/data" + index1 + "_" + index2 + ".bin", FileMode.Create, FileAccess.Write))
+                {
+                    while (!fs.CanWrite)
+                    {
+                        Thread.Sleep(1);
+                    }
+                    for (int i = 0; i < worldChunkSize; i++)
+                    {
+                        for (int ii = 0; ii < worldChunkSize; ii++)
+                        {
+                            TerrainChunk tc = terrains[i, ii];
+                            Buffer.BlockCopy(tc.heights, 0, byteArray, 0, size * size * 4);
+                            fs.Write(byteArray, 0, size * size * 4);
+                            IntBuffer[0] = tc.loadedChunks.Count;
+                            Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                            fs.Write(byteArray, 0, 4);
+
+                            for (int iii = 0; iii < tc.loadedChunks.Count; iii++)
+                            {
+                                VoxelChunk vc = tc.loadedChunks[iii];
+                                if (CompressChunk(vc))
+                                {
+                                    fs.WriteByte(1);
+                                    IntBuffer[0] = compressorCount;
+                                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                                    fs.Write(byteArray, 0, 4);
+                                    IntBuffer[0] = vc.index3;
+                                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                                    fs.Write(byteArray, 0, 4);
+                                    fs.Write(compressor, 0, compressorCount);
+                                    compressorCount = 0;
+                                }
+                                else
+                                {
+
+                                    fs.WriteByte(0);
+                                    IntBuffer[0] = vc.index3;
+                                    Buffer.BlockCopy(IntBuffer, 0, byteArray, 0, 4);
+                                    fs.Write(byteArray, 0, 4);
+                                    fs.Write(vc.types, 0, vc.types.Length);
+                                }
+                            }
+                            tc.Unload();
+                        }
+                    }
+                    fs.Flush();
+                    fs.Close();
+                    fs.Dispose();
+                }
             }
             return true;
         }else
@@ -837,9 +916,9 @@ public class WorldChunk : IComparable
         }
     }
 
-    public void BreakBlock(Player p)
+    public bool BreakBlock(Player p)
     {
-        Vector3 pos = p.transform.position;
+        Vector3 pos = World.world.playerPos;
         int i = Mathf.FloorToInt(pos.x) + p.wp.posIndex.x + worldChunkSize * size / 2 - index1 * worldChunkSize * size;
         int ii = Mathf.FloorToInt(pos.z) + p.wp.posIndex.z + worldChunkSize * size / 2 - index2 * worldChunkSize * size;
         WorldChunk terrain = null;
@@ -876,9 +955,9 @@ public class WorldChunk : IComparable
             terrain = terrain == null ? chunks[ier * 3 + iier] : terrain.chunks[ier * 3 + iier];
         }
         p.chunk = terrain;
-        if (terrain.GraphicsLoaded() != 9 | !terrain.CanLoad())
+        if (!terrain.AreAllGraphicsLoaded())
         {
-            return;
+            return false;
         }
         int oer = Mathf.FloorToInt((float)i / size);
         int ooer = Mathf.FloorToInt((float)ii / size);
@@ -934,6 +1013,7 @@ public class WorldChunk : IComparable
                 }
             }
         }
+        return true;
     }
     public bool updated = false;
     public bool updating = false;

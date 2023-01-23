@@ -318,60 +318,10 @@ public class TerrainChunk
         VoxelChunk chunk = terrain.voxelChunks[chunkDepth + iiier];
         if (chunk != null)
         {
-            if (ii < 8)
-            {
-                terrain.chunks[3].LoadChunk(iiier);
-            }
-            if (ii >= size - 8)
-            {
-                terrain.chunks[5].LoadChunk(iiier);
-            }
-            if (i >= size - 8)
-            {
-                terrain.chunks[7].LoadChunk(iiier);
-            }
-            if (i < 8)
-            {
-                terrain.chunks[1].LoadChunk(iiier);
-            }
-            if (iii >= size - 8)
-            {
-                terrain.LoadChunk(iiier + 1);
-            }
-            if (iii < 8)
-            {
-                terrain.LoadChunk(iiier - 1);
-            }
             chunk.SetTypeFast(i * size * size + ii * size + iii, type);
         }
         else
         {
-            chunk = terrain.LoadChunk(iiier);
-            if (ii < 8)
-            {
-                terrain.chunks[3].LoadChunk(iiier);
-            }
-            if (ii >= size - 8)
-            {
-                terrain.chunks[5].LoadChunk(iiier);
-            }
-            if (i >= size - 8)
-            {
-                terrain.chunks[7].LoadChunk(iiier);
-            }
-            if (i < 8)
-            {
-                terrain.chunks[1].LoadChunk(iiier);
-            }
-            if (iii >= size - 8)
-            {
-                terrain.LoadChunk(iiier + 1);
-            }
-            if (iii < 8)
-            {
-                terrain.LoadChunk(iiier - 1);
-            }
-            chunk.SetTypeFast(i*size*size+ii*size+iii, type);
         }
     }
 
