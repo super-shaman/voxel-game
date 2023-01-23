@@ -31,7 +31,10 @@ public class MainMenu : MonoBehaviour
     void Start()
     {
         r = Screen.currentResolution;
-        Screen.SetResolution(r.width, r.height, FullScreenMode.ExclusiveFullScreen, 60);
+        if (!Application.isEditor)
+        {
+            Screen.SetResolution(r.width, r.height, FullScreenMode.ExclusiveFullScreen);
+        }
         QualitySettings.SetQualityLevel(5);
     }
 
@@ -39,8 +42,6 @@ public class MainMenu : MonoBehaviour
     {
         if (!Application.isEditor)
         {
-            System.Diagnostics.Process.GetCurrentProcess().Close();
-            System.Diagnostics.Process.GetCurrentProcess().Kill();
 
         }
     }

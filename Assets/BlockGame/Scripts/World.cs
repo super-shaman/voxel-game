@@ -2022,8 +2022,6 @@ public class World : MonoBehaviour
         world = null;
         if (!Application.isEditor)
         {
-            System.Diagnostics.Process.GetCurrentProcess().Close();
-            System.Diagnostics.Process.GetCurrentProcess().Kill();
 
         }
     }
